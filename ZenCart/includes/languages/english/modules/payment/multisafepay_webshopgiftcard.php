@@ -1,6 +1,4 @@
 <?php
-define('MODULE_PAYMENT_MSP_WEBSHOPGIFTCARD_TEXT_TITLE',			'Webshopgiftcard by Multisafepay');
 
-
-
+define('MODULE_PAYMENT_MSP_WEBSHOPGIFTCARD_TEXT_TITLE', 'Webshop Giftcard');
 ?>

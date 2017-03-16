@@ -1,6 +1,4 @@
 <?php
-define('MODULE_PAYMENT_MSP_LIEF_TEXT_TITLE',			'Lief by Multisafepay');
 
-
-
+define('MODULE_PAYMENT_MSP_LIEF_TEXT_TITLE', 'Lief! Kadokaart');
 ?>

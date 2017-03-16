@@ -1,5 +1,4 @@
 <?php
-define('MODULE_PAYMENT_MSP_VISA_TEXT_TITLE',			' VISA by Multisafepay');
 
-
+define('MODULE_PAYMENT_MSP_VISA_TEXT_TITLE', 'VISA');
 ?>

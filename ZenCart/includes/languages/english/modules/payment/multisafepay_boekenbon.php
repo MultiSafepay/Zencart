@@ -1,6 +1,4 @@
 <?php
-define('MODULE_PAYMENT_MSP_BOEKENBON_TEXT_TITLE',			'Boekenbon by Multisafepay');
 
-
-
+define('MODULE_PAYMENT_MSP_BOEKENBON_TEXT_TITLE', 'Boekenbon');
 ?>

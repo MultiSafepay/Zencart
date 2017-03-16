@@ -1,6 +1,4 @@
 <?php
-define('MODULE_PAYMENT_MSP_DEGROTESPEELGOEDWINKEL_TEXT_TITLE',			'De grote speelgoedwinkel by Multisafepay');
 
-
-
+define('MODULE_PAYMENT_MSP_DGSGW_TEXT_TITLE', 'De Grote Speelgoedwinkel');
 ?>

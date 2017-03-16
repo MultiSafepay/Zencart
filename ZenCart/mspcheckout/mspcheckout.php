@@ -12,8 +12,11 @@ if (MODULE_PAYMENT_MULTISAFEPAY_FCO_STATUS == 'True') {
             <div align="center">
                 <?php
                 if ($GLOBALS['_SESSION']['cart']->contents) {
-                    echo '<a href="mspcheckout/process.php"><img src="mspcheckout/images/button.png" alt="Checkout" name="Checkout"></a>';
-                    //echo ' <p align="right" style="clear: both; padding: 15px 50px 0 0;"> OR </p>';
+                    if (MODULE_PAYMENT_MULTISAFEPAY_FCO_BTN_COLOR == 'Orange') {
+                        echo '- Or -<br/><br/><a href="mspcheckout/process.php"><img src="mspcheckout/images/fcobutton-orange.png" alt="Checkout" name="Checkout"></a>';
+                    } else {
+                        echo '- Or -<br/><br/><a href="mspcheckout/process.php"><img src="mspcheckout/images/fcobutton-black.png" alt="Checkout" name="Checkout"></a>';
+                    }
                 }
                 ?>
             </div>
@@ -24,6 +27,8 @@ if (MODULE_PAYMENT_MULTISAFEPAY_FCO_STATUS == 'True') {
     // display any MSP error
 
     if (isset($HTTP_GET_VARS['payment_error']) && is_object(${$HTTP_GET_VARS['payment_error']}) && ($error = ${$HTTP_GET_VARS['payment_error']}->get_error())) {
+        var_dump('error in mspcheckout.php line 35');
+        exit;
         ?>
         <table border="0" width="100%" cellspacing="0" cellpadding="2">
             <tr>
