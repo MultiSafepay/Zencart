@@ -2,7 +2,7 @@
 
 //Dirty fix. Zencart uses the get variable currency= to set the shop currency. It does this by redirecting the customer to the main page. Because of this the shippingmethods arn't returned to Fast Checkout.
 unset($_GET['currency']);
-
+        
 
 chdir("../../../../");
 require("includes/application_top.php");

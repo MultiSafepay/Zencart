@@ -51,7 +51,7 @@ if (empty($_GET['transactionid'])) {
     $payment_module->order_id = $_GET['transactionid'];
     $transdata = $payment_module->check_transaction();
 
-    if ($payment_module->msp->details['ewallet']['fastcheckout'] == "NO") {
+    if ($payment_module->msp->orders->data->fastcheckout == "NO") {
 
         if ($payment_module->msp->details['paymentdetails']['type'] == "PAYAFTER") {
             $payment_module = new multisafepay_payafter();
@@ -75,7 +75,7 @@ if (empty($_GET['transactionid'])) {
 if ($_SESSION['customer_id']) {
     zen_redirect(zen_href_link(FILENAME_CHECKOUT_SUCCESS, '', 'SSL'));
 } else {
-    zen_redirect(zen_href_link('index.php'));
+    zen_redirect(zen_href_link('index'));
 }
 ?>
 

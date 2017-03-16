@@ -1,7 +1,7 @@
 <?php
 
 $dir = dirname(dirname(dirname(dirname(__FILE__))));
-require_once($dir . "/mspcheckout/include/MultiSafepay.combined.php");
+require_once($dir . "/mspcheckout/API/Autoloader.php");
 
 class multisafepay_payafter {
 
@@ -11,7 +11,7 @@ class multisafepay_payafter {
     var $enabled;
     var $sort_order;
     var $plugin_name;
-    var $icon = "PAYAFTER.png";
+    var $icon = "payafter.png";
     var $api_url;
     var $order_id;
     var $public_title;
@@ -24,25 +24,26 @@ class multisafepay_payafter {
      * Constructor
      */
 
-    function multisafepay_payafter($order_id = -1) {
+    function __construct($order_id = -1)
+    {
         global $order;
+
         $this->code = 'multisafepay_payafter';
         $this->title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_TITLE);
         $this->description = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_TITLE);
         $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SORT_ORDER;
-        $this->plugin_name = 'ZENCART 1.5.X - plugin ';
+        $this->plugin_name = 'ZenCart 3.0.0';
         $this->order_status = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_INITIALIZED;
 
         if (is_object($order)) {
             $this->update_status();
         }
 
-        // new configuration value
         if (MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER == 'Live' || MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER == 'Live account') {
-            $this->api_url = 'https://api.multisafepay.com/ewx/';
+            $this->api_url = 'https://api.multisafepay.com/v1/json/';
         } else {
-            $this->api_url = 'https://testapi.multisafepay.com/ewx/';
+            $this->api_url = 'https://testapi.multisafepay.com/v1/json/';
         }
 
         $this->order_id = $order_id;
@@ -61,44 +62,65 @@ class multisafepay_payafter {
         }
     }
 
-    function getTitle($admin = 'title') {
+    /**
+     * 
+     * @param type $admin
+     * @return type
+     */
+    function getTitle($admin = 'title')
+    {
         $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
 
-        $title .= ($this->checkView() == "admin") ? "MultiSafepay - " : "";
+        $title .= ($this->checkView() == "admin") ? "MultiSafepay " : "";
         if ($admin && $this->checkView() == "admin") {
             $title .= $admin;
         } else {
 
             $title .= $this->getLangStr($admin);
-        };
+        }
+
         return $title;
     }
 
-    function getLangStr($str) {
+    /**
+     * 
+     * @param type $str
+     * @return type
+     */
+    function getLangStr($str)
+    {
         $holder = $str;
         return $holder;
     }
 
-    function generateIcon($icon) {
-
-        return zen_image($icon);
+    /**
+     * Generate the payment method icon
+     * 
+     * @param type $icon
+     * @return type
+     */
+    function generateIcon($icon)
+    {
+        return zen_image($icon, '', 50, 23, 'style="display:inline-block;vertical-align: middle;height:100%;margin-right:10px;"');
     }
 
-    function getScriptName() {
+    /**
+     * 
+     * @global type $PHP_SELF
+     * @return type
+     */
+    function getScriptName()
+    {
         global $PHP_SELF;
-
         return basename($PHP_SELF);
-        /*
-          if (isset($_SERVER["SCRIPT_NAME"])){
-          $file 	= $_SERVER["SCRIPT_NAME"];
-          $break 	= Explode('/', $file);
-          $file 	= $break[count($break) - 1];
-          };
-          return $file;
-         */
     }
 
-    function getIcon() {
+    /**
+     * 
+     * @return string
+     */
+    function getIcon()
+    {
         $icon = DIR_WS_IMAGES . "multisafepay/en/" . $this->icon;
 
         if (file_exists(DIR_WS_IMAGES . "multisafepay/" . strtolower($this->getUserLanguage("DETECT")) . "/" . $this->icon)) {
@@ -107,7 +129,15 @@ class multisafepay_payafter {
         }
     }
 
-    function getUserLanguage($savedSetting) {
+    /**
+     * 
+     * @global type $db
+     * @global type $languages_id
+     * @param type $savedSetting
+     * @return string
+     */
+    function getUserLanguage($savedSetting)
+    {
         global $db;
         if ($savedSetting != "DETECT") {
             return $savedSetting;
@@ -124,9 +154,13 @@ class multisafepay_payafter {
         return "en";
     }
 
-    function checkView() {
+    /**
+     * 
+     * @return string
+     */
+    function checkView()
+    {
         $view = "admin";
-
 
         if (!IS_ADMIN_FLAG) {
             if ($this->getScriptName() == FILENAME_CHECKOUT_PAYMENT) {
@@ -140,7 +174,8 @@ class multisafepay_payafter {
 
     // This is a copy from process.php	
     // This is a copy from process.php	
-    function get_shipping_methods($weight) {
+    function get_shipping_methods($weight)
+    {
         global $shipping_weight, $shipping_num_boxes, $db, $total_count;
 
 
@@ -211,7 +246,8 @@ class multisafepay_payafter {
         $module_info = array();
         $module_info_enabled = array();
         $shipping_modules = array();
-        for ($i = 0, $n = sizeof($directory_array); $i < $n; $i++) {
+        for ($i = 0, $n = sizeof($directory_array); $i < $n; $i++)
+        {
             $file = $directory_array[$i];
             global $language;
             include_once (DIR_FS_CATALOG . DIR_WS_LANGUAGES . $_SESSION['language'] . '/modules/shipping/' . $file);
@@ -221,7 +257,8 @@ class multisafepay_payafter {
             $module = new $class;
             $curr_ship = strtoupper($module->code);
 
-            switch ($curr_ship) {
+            switch ($curr_ship)
+            {
                 case 'FEDEXGROUND':
                     $curr_ship = 'FEDEX_GROUND';
                     break;
@@ -261,7 +298,8 @@ class multisafepay_payafter {
         $shipping_methods = array();
 
 
-        foreach ($module_info as $key => $value) {
+        foreach ($module_info as $key => $value)
+        {
             // check if active
             $module_name = $module_info[$key]['code'];
             if (!$module_info_enabled[$module_name]) {
@@ -314,7 +352,8 @@ class multisafepay_payafter {
 
 
             if (empty($quote['error']) && $quote['id'] != 'zones') {
-                foreach ($quote['methods'] as $method) {
+                foreach ($quote['methods'] as $method)
+                {
                     $shipping_methods[] = array(
                         'id' => $quote['id'],
                         'module' => $quote['module'],
@@ -326,7 +365,8 @@ class multisafepay_payafter {
                     );
                 }
             } elseif ($quote['id'] == 'zones') {
-                for ($cur_zone = 1; $cur_zone <= $module->num_zones; $cur_zone++) {
+                for ($cur_zone = 1; $cur_zone <= $module->num_zones; $cur_zone++)
+                {
                     $countries_table = constant('MODULE_SHIPPING_ZONES_COUNTRIES_' . $cur_zone);
                     $country_zones = split("[,]", $countries_table);
 
@@ -336,7 +376,8 @@ class multisafepay_payafter {
 
                         $zones_table = split("[:,]", $zones_cost);
                         $size = sizeof($zones_table);
-                        for ($i = 0; $i < $size; $i+=2) {
+                        for ($i = 0; $i < $size; $i+=2)
+                        {
                             if ($shipping_weight <= $zones_table[$i]) {
                                 $shipping = $zones_table[$i + 1];
                                 $shipping_method = $shipping_weight . ' ' . MODULE_SHIPPING_ZONES_TEXT_UNITS;
@@ -369,7 +410,8 @@ class multisafepay_payafter {
      * Check whether this payment module is available
      */
 
-    function update_status() {
+    function update_status()
+    {
         global $order, $db;
 
         if (($this->enabled == true) && ((int) MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ZONE > 0)) {
@@ -398,7 +440,8 @@ class multisafepay_payafter {
      * Client side javascript that will verify any input fields you use in the
      * payment method selection page
      */
-    function javascript_validation() {
+    function javascript_validation()
+    {
         return false;
     }
 
@@ -406,7 +449,8 @@ class multisafepay_payafter {
      * Outputs the payment method title/text and if required, the input fields
      */
 
-    function selection() {
+    function selection()
+    {
         global $customer_id;
         global $languages_id;
         global $order;
@@ -428,7 +472,8 @@ class multisafepay_payafter {
      * Any checks of any conditions after payment method has been selected
      */
 
-    function pre_confirmation_check() {
+    function pre_confirmation_check()
+    {
         return false;
     }
 
@@ -438,7 +483,8 @@ class multisafepay_payafter {
      * Any checks or processing on the order information before proceeding to
      * payment confirmation
      */
-    function confirmation() {
+    function confirmation()
+    {
         return false;
     }
 
@@ -447,8 +493,29 @@ class multisafepay_payafter {
      * gateway
      */
 
-    function process_button() {
-        return false;
+    function process_button()
+    {
+        if (MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DIRECT === 'True') {
+            return $this->create_payafterinput();
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Set the bankaccount and birthday input for direct Pay After Ddelivery
+     * 
+     * @return type
+     */
+    function create_payafterinput()
+    {
+
+        $output = '<div class="idealbox" style="padding:20px;border:1px solid #d50172; margin-top:20px;text-align:center">';
+        $output .= '<label>Bankaccount: </label><input type="text" name="pad_bankaccount"style="width:200px; padding: 0px; margin-left: 7px;"><br/>';
+        $output .= '<label>Birthday: </label><input type="text" name="pad_birthday" placeholder="DD-MM-YYYY" style="width:200px; padding: 0px; margin-left: 35px;">';
+        $output .= '<div style="clear:both;"></div></div><br/>';
+
+        return ($output);
     }
 
     // ---- process payment ----
@@ -456,7 +523,8 @@ class multisafepay_payafter {
     /*
      * Payment verification
      */
-    function before_process() {
+    function before_process()
+    {
         $this->_save_order();
 
         zen_redirect($this->_start_payafter());
@@ -466,7 +534,8 @@ class multisafepay_payafter {
      * Post-processing of the payment/order after the order has been finalised
      */
 
-    function after_process() {
+    function after_process()
+    {
         return false;
     }
 
@@ -475,11 +544,17 @@ class multisafepay_payafter {
     /*
      * Advanced error handling
      */
-    function output_error() {
+    function output_error()
+    {
         return false;
     }
 
-    function get_error() {
+    /**
+     * 
+     * @return type
+     */
+    function get_error()
+    {
         $error = array(
             'title' => MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_ERROR,
             'error' => $this->_get_error_message($_GET['error'])
@@ -489,7 +564,8 @@ class multisafepay_payafter {
     }
 
     // ---- MultiSafepay ----
-    function isNewAddressQuery() {
+    function isNewAddressQuery()
+    {
         // Check for mandatory parameters
         $country = $_GET['country'];
         $countryCode = $_GET['countrycode'];
@@ -502,7 +578,8 @@ class multisafepay_payafter {
     }
 
     // Handles new shipping costs request
-    function handleShippingMethodsNotification() {
+    function handleShippingMethodsNotification()
+    {
         $country = $_GET['country'];
         $countryCode = $_GET['countrycode'];
         $transactionId = $_GET['transactionid'];
@@ -514,11 +591,13 @@ class multisafepay_payafter {
     }
 
     // Returns XML with new shipping costs
-    function getShippingMethodsFilteredXML($country, $countryCode, $weight, $size, $transactionId) {
+    function getShippingMethodsFilteredXML($country, $countryCode, $weight, $size, $transactionId)
+    {
         $outxml = '<shipping-info>';
         $methods = $this->getShippingMethodsFiltered($country, $countryCode, $weight, $size, $transactionId);
 
-        foreach ($methods as $method) {
+        foreach ($methods as $method)
+        {
             $outxml .= '<shipping>';
             $outxml .= '<shipping-name>';
             $outxml .= $method['name'];
@@ -538,11 +617,14 @@ class multisafepay_payafter {
     // 'name' => 'test-name'
     // 'cost' => '123'
     // 'currency' => 'EUR' (currently only this supported)
-    function getShippingMethodsFiltered($country, $countryCode, $weight, $size, $transactionId) {
+
+    function getShippingMethodsFiltered($country, $countryCode, $weight, $size, $transactionId)
+    {
         $out = array();
         $shipping_methods = $this->get_shipping_methods($weight);
 
-        foreach ($shipping_methods as $shipping_method) {
+        foreach ($shipping_methods as $shipping_method)
+        {
             // ISO codes match - add to output list
             $shipping = array();
             $shipping['name'] = $shipping_method['module'] . ' - ' . $shipping_method['title'];
@@ -554,200 +636,215 @@ class multisafepay_payafter {
         return $out;
     }
 
-    function _start_payafter() {
+    /**
+     * 
+     * @return type
+     */
+    function _start_payafter()
+    {
+        $items_list = "<ul>\n";
+        foreach ($GLOBALS['order']->products as $product)
+        {
+            $items_list .= "<li>" . $product['name'] . "</li>\n";
+        }
+        $items_list .= "</ul>\n";
 
         $amount = round($GLOBALS['order']->info['total'], 2);
         $amount = $amount * 100;
 
+        $sid = zen_session_name() . '=' . zen_session_id();
 
-        // generate items list
-        $items = "<ul>\n";
-        foreach ($GLOBALS['order']->products as $product) {
-            $items .= "<li>" . $product['name'] . "</li>\n";
-        }
-        $items .= "</ul>\n";
-
-        // start transaction
-        $msp = new MultiSafepayAPI();
-        $msp->plugin_name = $this->plugin_name;
-        $msp->version = '2.0.3';
-
-        $msp->plugin['shop'] = 'ZenCart';
-        $msp->plugin['shop_version'] = '1.5.x';
-        $msp->plugin['plugin_version'] = '2.0.3';
-        $msp->plugin['partner'] = '';
-
-        $msp->test = (MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER != 'Live' && MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER != 'Live account');
-        $msp->merchant['account_id'] = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ACCOUNT_ID;
-        $msp->merchant['site_id'] = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SITE_ID;
-        $msp->merchant['site_code'] = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SITE_SECURE_CODE;
-        $msp->merchant['notification_url'] = $this->_href_link('ext/modules/payment/multisafepay/notify_checkout.php?type=initial', '', 'NONSSL', false, false);
-        $msp->merchant['cancel_url'] = zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL');
-
-        $msp->use_shipping_notification = false;
-
-        if (MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_AUTO_REDIRECT == "True") {
-            $msp->merchant['redirect_url'] = $this->_href_link('ext/modules/payment/multisafepay/success.php', '', 'NONSSL', false, false);
-        }
-
-
-
-        $msp->customer['locale'] = strtolower($GLOBALS['order']->delivery['country']['iso_code_2']) . '_' . $GLOBALS['order']->delivery['country']['iso_code_2'];
-
-
-        if (!isset($GLOBALS['order']->billing['firstname'])) {
-            $msp->customer['firstname'] = $GLOBALS['order']->customer['firstname'];
-            $msp->customer['lastname'] = $GLOBALS['order']->customer['lastname'];
-            $msp->customer['zipcode'] = $GLOBALS['order']->customer['postcode'];
-            $msp->customer['city'] = $GLOBALS['order']->customer['city'];
-            $msp->customer['country'] = $GLOBALS['order']->customer['country']['iso_code_2'];
-            $msp->parseCustomerAddress($GLOBALS['order']->customer['street_address']);
+        if (MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_AUTO_REDIRECT === 'True') {
+            $redirect_url = $this->_href_link('ext/modules/payment/multisafepay/success.php?' . $sid, '', 'NONSSL', false, false);
         } else {
-            $msp->customer['firstname'] = $GLOBALS['order']->billing['firstname'];
-            $msp->customer['lastname'] = $GLOBALS['order']->billing['lastname'];
-            $msp->customer['zipcode'] = $GLOBALS['order']->billing['postcode'];
-            $msp->customer['city'] = $GLOBALS['order']->billing['city'];
-            $msp->customer['country'] = $GLOBALS['order']->billing['country']['iso_code_2'];
-            $msp->parseCustomerAddress($GLOBALS['order']->billing['street_address']);
+            $redirect_url = null;
         }
 
-
-        if (isset($GLOBALS['order']->delivery['firstname'])) {
-            $msp->delivery['firstname'] = $GLOBALS['order']->delivery['firstname'];
-            $msp->delivery['lastname'] = $GLOBALS['order']->delivery['lastname'];
-            $msp->delivery['zipcode'] = $GLOBALS['order']->delivery['postcode'];
-            $msp->delivery['city'] = $GLOBALS['order']->delivery['city'];
-            $msp->delivery['country'] = $GLOBALS['order']->delivery['country']['iso_code_2'];
-            $msp->delivery['address1'] = $GLOBALS['order']->delivery['street_address'];
+        if (MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DIRECT === 'True') {
+            $trans_type = 'direct';
+        } else {
+            $trans_type = 'redirect';
         }
 
+        if ($_POST['pad_bankaccount'] == "" || $_POST['pad_birthday'] == "") {
+            $trans_type = 'redirect';
+        }
 
-
-        $msp->customer['phone'] = $GLOBALS['order']->customer['telephone'];
-        $msp->customer['email'] = $GLOBALS['order']->customer['email_address'];
-
-        $msp->transaction['id'] = $this->order_id;
-        $msp->transaction['currency'] = $GLOBALS['order']->info['currency'];
-        $msp->transaction['amount'] = $amount; // cents
-        $msp->transaction['description'] = 'Order #' . $this->order_id . ' at ' . STORE_NAME;
-        $msp->transaction['items'] = $items;
-        $msp->transaction['gateway'] = 'PAYAFTER';
-
-        $msp->transaction['var1'] = $_SESSION['customer_id'];
-        $msp->transaction['var2'] = $_SESSION['billto'];
         if ($_SESSION['sendto'] == '') {
-            $msp->transaction['var3'] = $_SESSION['billto'];
+            $extra_var3 = $_SESSION['billto'];
         } else {
-            $msp->transaction['var3'] = $_SESSION['sendto'];
+            $extra_var3 = $_SESSION['sendto'];
         }
 
+        try {
+            $msp = new MultiSafepayAPI\Client();
 
-        //$msp->transaction['var2']          = 	tep_session_id() .';'. tep_session_name();
-
-        $msp->setDefaultTaxZones();
-        $msp->cart->AddRoundingPolicy('', 'PER_ITEM');
-
-        $this->getItems($msp);
-
-        $GLOBALS['multisafepay_order_id'] = $this->order_id;
-        //tep_session_register('multisafepay_order_id');
-
-
-        $price = 0;
-        $taxes = array();
-
-        foreach ($GLOBALS['order']->products as $product) {
-            if (isset($product['final_price'])) {
-                $price += $product['final_price'] * $product['qty'];
-            } elseif (isset($product['price'])) {
-                $price += $product['price'] * $product['qty'];
-            }
-            $taxes[$product['tax']] = $product['tax'];
-        }
-
-
-
-        //add coupon
-
-        if (isset($GLOBALS['ot_coupon']->deduction)) {
-            if ($GLOBALS['ot_coupon']->deduction != '') {
-                $c_item = new MspItem('Discount' . " " . $GLOBALS['order']->info['currency'], 'Shipping', '1', -$GLOBALS['ot_coupon']->deduction, '0', '0');
-                $msp->cart->AddItem($c_item);
-                $c_item->SetMerchantItemId('discount');
-                $c_item->SetTaxTableSelector('BTW0');
-            }
-        }
-
-        $unique_taxes = array_unique($taxes);
-
-        if (isset($unique_taxes['20'])) {
-            $tax = 1 + ($unique_taxes['20'] / 100);
-        } elseif (isset($unique_taxes['6'])) {
-            $tax = 1 + ($unique_taxes['6'] / 100);
-        } else {
-            $tax = 1 + ($unique_taxes['5'] / 100);
-        }
-
-
-        $total_tax = ($price * $tax) - $price;
-
-        if ((string) $total_tax == (string) $GLOBALS['order']->info['tax']) {
-            $c_item = new MspItem('Shipping' . " " . $GLOBALS['order']->info['currency'], 'Shipping', '1', $GLOBALS['order']->info['shipping_cost'], '0', '0');
-            $msp->cart->AddItem($c_item);
-            $c_item->SetMerchantItemId('Shipping');
-            $c_item->SetTaxTableSelector('BTW0');
-        } else {
-
-            $shipping_tax_excl = $GLOBALS['order']->info['shipping_cost'] - $GLOBALS['order']->info['shipping_tax'];
-            $shipping_tax_percentage = $GLOBALS['order']->info['shipping_tax']  / ( $shipping_tax_excl /100) ;
-            $shipping_tax_percentage =$shipping_tax_percentage /100 ;
-
-			
-            $table = new MspAlternateTaxTable();
-            $table->name = 'shipping_tax';
-            $rule = new MspAlternateTaxRule($shipping_tax_percentage);
-            $table->AddAlternateTaxRules($rule);
-            $msp->cart->AddAlternateTaxTables($table);
-
-
-            $c_item = new MspItem('Shipping' . " " . $GLOBALS['order']->info['currency'], 'Shipping', '1', $shipping_tax_excl, '0', '0');
-            $msp->cart->AddItem($c_item);
-            $c_item->SetMerchantItemId('Shipping');
-            $c_item->SetTaxTableSelector('shipping_tax');
-		}
-
-        if (isset($GLOBALS['surcharge_cost'])) {
-
-            $fee_inc_tax = $GLOBALS['surcharge_cost'];
-
-            if ($fee_inc_tax > 2.95) {
-                $this->_error_redirect('Multisafepay fee to high!');
-                exit();
+            if (MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER == 'Live account') {
+                $api_url = 'https://api.multisafepay.com/v1/json/';
+            } else {
+                $api_url = 'https://testapi.multisafepay.com/v1/json/';
             }
 
-            $tax = ($fee_inc_tax / 121) * 21;
-            $fee = $fee_inc_tax - $tax;
-            $fee = number_format($fee, 4, '.', '');
+            $msp->setApiUrl($api_url);
+            $msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_KEY);
 
-            $c_item = new MspItem('Fee', 'Fee', 1, $fee, 'KG', 0); // Todo adjust the amount to cents, and round it up.
-            $c_item->SetMerchantItemId('Fee');
-            $c_item->SetTaxTableSelector('BTW21');
-            $msp->cart->AddItem($c_item);
+            list($cust_street, $cust_housenumber) = $this->parseAddress($GLOBALS['order']->customer['street_address']);
+            list($del_street, $del_housenumber) = $this->parseAddress($GLOBALS['order']->customer['street_address']);
+
+            $msp->orders->post(array(
+                "type" => $trans_type,
+                "order_id" => $this->order_id,
+                "currency" => $GLOBALS['order']->info['currency'],
+                "amount" => $amount,
+                "description" => 'Order #' . $this->order_id . ' at ' . STORE_NAME,
+                "var1" => $_SESSION['customer_id'],
+                "var2" => $_SESSION['billto'],
+                "var3" => $extra_var3,
+                "items" => $items_list,
+                "manual" => "false",
+                "gateway" => "PAYAFTER",
+                "days_active" => MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DAYS_ACTIVE,
+                "payment_options" => array(
+                    "notification_url" => $this->_href_link('ext/modules/payment/multisafepay/notify_checkout.php?type=initial&' . $sid, '', 'NONSSL', false, false),
+                    "redirect_url" => $redirect_url,
+                    "cancel_url" => zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'),
+                    "close_window" => "true"
+                ),
+                "customer" => array(
+                    "locale" => strtolower($GLOBALS['order']->delivery['country']['iso_code_2']) . '_' . $GLOBALS['order']->delivery['country']['iso_code_2'],
+                    "ip_address" => $_SERVER['REMOTE_ADDR'],
+                    "forwarded_ip" => $_SERVER['HTTP_X_FORWARDED_FOR'],
+                    "first_name" => $GLOBALS['order']->customer['firstname'],
+                    "last_name" => $GLOBALS['order']->customer['lastname'],
+                    "address1" => $cust_street,
+                    "address2" => null,
+                    "house_number" => $cust_housenumber,
+                    "zip_code" => $GLOBALS['order']->customer['postcode'],
+                    "city" => $GLOBALS['order']->customer['city'],
+                    "state" => $GLOBALS['order']->customer['state'],
+                    "country" => $GLOBALS['order']->customer['country']['iso_code_2'],
+                    "phone" => $GLOBALS['order']->customer['telephone'],
+                    "email" => $GLOBALS['order']->customer['email_address'],
+                    "referrer" => $_SERVER['HTTP_REFERER'],
+                    "user_agent" => $_SERVER['HTTP_USER_AGENT']
+                ),
+                "delivery" => array(
+                    "first_name" => $GLOBALS['order']->delivery['firstname'],
+                    "last_name" => $GLOBALS['order']->delivery['lastname'],
+                    "address1" => $del_street,
+                    "address2" => null,
+                    "house_number" => $del_housenumber,
+                    "zip_code" => $GLOBALS['order']->delivery['postcode'],
+                    "city" => $GLOBALS['order']->delivery['city'],
+                    "state" => null,
+                    "country" => $GLOBALS['order']->delivery['country']['iso_code_2'],
+                    "phone" => $GLOBALS['order']->customer['telephone'],
+                    "email" => $GLOBALS['order']->customer['email_address']
+                ),
+                "gateway_info" => array(
+                    "birthday" => $_POST['pad_birthday'],
+                    "bank_account" => $_POST['pad_bankaccount'],
+                    "phone" => $GLOBALS['order']->customer['telephone'],
+                    "referrer" => $_SERVER['HTTP_REFERER'],
+                    "user_agent" => $_SERVER['HTTP_USER_AGENT'],
+                    "email" => $GLOBALS['order']->customer['email_address']
+                ),
+                "shopping_cart" => $this->getShoppingCart(),
+                "checkout_options" => $this->getCheckoutOptions(),
+                "google_analytics" => array(
+                    "account" => MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_GA_ACCOUNT,
+                ),
+                "plugin" => array(
+                    "shop" => PROJECT_VERSION_NAME,
+                    "shop_version" => PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR,
+                    "plugin_version" => 'ZenCart 3.0.0',
+                    "partner" => 'MultiSafepay',
+                    "shop_root_url" => $_SERVER['SERVER_NAME']
+                )
+            ));
+
+            return $msp->orders->getPaymentLink();
+        } catch (Exception $e) {
+            echo '(MultiSafepay) ' . htmlspecialchars($e->getMessage());
+            exit;
         }
-
-
-        $url = $msp->startCheckout();
-
-
-        if ($msp->error) {
-            echo $msp->error_code . ": " . $msp->error;
-            exit();
-        }
-        return $url;
     }
 
-    function getItems($msp) {
-        foreach ($GLOBALS['order']->products as $product) {
+    /**
+     * Fetches the items and related data, and builds the $checkoutoptions_array
+     * 
+     * @global type $order
+     * @return array
+     */
+    function getCheckoutOptions()
+    {
+        global $order;
+
+        $checkoutoptions_array = array();
+        $checkoutoptions_array['use_shipping_notification'] = false;
+
+        $checkoutoptions_array['tax_tables'] = array(
+            "alternate" => array()
+        );
+
+        foreach ($order->products as $product)
+        {
+            if ($product['tax_description'] != 'Unknown tax rate' || $product['tax_description'] != 'Sales Tax') {
+                if (!$this->in_array_recursive(key($product['tax_groups']), $checkoutoptions_array['tax_tables']['alternate'])) {
+                    $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                        "standalone" => false,
+                        "name" => $product['tax_description'],
+                        "rules" => array(array
+                                (
+                                "rate" => current($product['tax_groups']) / 100
+                            ))
+                    );
+                }
+            } else {
+                if (!$this->in_array_recursive(key($product['tax_groups']), $checkoutoptions_array['tax_tables']['alternate'])) {
+                    $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                        "standalone" => false,
+                        "name" => "BTW0",
+                        "rules" => array
+                            (
+                            "rate" => 0.00
+                        )
+                    );
+                }
+            }
+        }
+
+        if ($order->info['shipping_cost'] != '0.00') {
+            if ($this->in_array_recursive(current(array_keys($order->info['tax_groups'])), $checkoutoptions_array['tax_tables']['alternate'])) {
+                $tax_percentage = $order->info['shipping_tax'] / ( $order->info['shipping_cost'] / 100);
+                $tax_percentage = $tax_percentage / 100;
+
+                $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                    "standalone" => false,
+                    "name" => current(array_keys($order->info['tax_groups'])),
+                    "rules" => array(array
+                            (
+                            "rate" => $tax_percentage
+                        ))
+                );
+            }
+        }
+
+        return $checkoutoptions_array;
+    }
+
+    /**
+     * Fetches the items and related data, and builds the $shoppingcart_array
+     * 
+     * @global type $order
+     * @return type array
+     */
+    function getShoppingCart()
+    {
+        $shoppingcart_array = array();
+
+        foreach ($GLOBALS['order']->products as $product)
+        {
             $price = $product['price'];
             if (isset($product['final_price'])) {
                 $price = $product['final_price'];
@@ -755,30 +852,160 @@ class multisafepay_payafter {
 
             $attributeString = '';
             if (!empty($product['attributes'])) {
-                foreach ($product['attributes'] as $attribute) {
+                foreach ($product['attributes'] as $attribute)
+                {
                     $attributeString .= $attribute['option'] . ' ' . $attribute['value'] . ', ';
                 }
                 $attributeString = substr($attributeString, 0, -2);
                 $attributeString = ' (' . $attributeString . ')';
             }
 
-            $c_item = new MspItem($product['name'] . $attributeString, $product['model'], $product['qty'], $price, 'KG', $product['weight']);
-            $c_item->SetMerchantItemId($product['id']);
-
-            if ($product['tax_description'] != 'Unknown tax rate') {
-
-                $tax_name = 'BTW' . $product['tax'];
-
-                $c_item->SetTaxTableSelector($tax_name);
-            } else {
-                $c_item->SetTaxTableSelector('BTW0');
-            }
-
-            $msp->cart->AddItem($c_item);
+            $shoppingcart_array['items'][] = array(
+                "name" => $product['name'] . $attributeString,
+                "description" => $product['model'],
+                "unit_price" => $price,
+                "quantity" => $product['qty'],
+                "merchant_item_id" => $product['id'],
+                "tax_table_selector" => $product['tax_description'],
+                "weight" => array(
+                    "unit" => "KG",
+                    "value" => $product['weight']
+                )
+            );
         }
+
+        if (isset($GLOBALS['order']->info['shipping_method'])) {
+            $shoppingcart_array['items'][] = array(
+                "name" => $GLOBALS['order']->info['shipping_method'],
+                "description" => $GLOBALS['order']->info['shipping_method'],
+                "unit_price" => $GLOBALS['order']->info['shipping_cost'],
+                "quantity" => 1,
+                "merchant_item_id" => 'msp-shipping',
+                "tax_table_selector" => current(array_keys($GLOBALS['order']->info['tax_groups'])),
+                "weight" => array(
+                    "unit" => "KG",
+                    "value" => 0
+                )
+            );
+        }
+
+        /**
+          //Fee
+
+          if (isset($GLOBALS['surcharge_cost']))
+          {
+
+          $fee_inc_tax = $GLOBALS['surcharge_cost'];
+
+          if ($fee_inc_tax > 2.95)
+          {
+          $this->_error_redirect('Multisafepay fee to high!');
+          exit();
+          }
+
+          $tax = ($fee_inc_tax / 121) * 21;
+          $fee = $fee_inc_tax - $tax;
+          $fee = number_format($fee, 4, '.', '');
+
+          $c_item = new MspItem('Fee', 'Fee', 1, $fee, 'KG', 0); // Todo adjust the amount to cents, and round it up.
+          $c_item->SetMerchantItemId('Fee');
+          $c_item->SetTaxTableSelector('BTW21');
+          $msp->cart->AddItem($c_item);
+          }
+
+          //add coupon
+
+          if (isset($GLOBALS['ot_coupon']->deduction))
+          {
+          if ($GLOBALS['ot_coupon']->deduction != '')
+          {
+          $c_item = new MspItem('Discount' . " " . $GLOBALS['order']->info['currency'], 'Shipping', '1', -$GLOBALS['ot_coupon']->deduction, '0', '0');
+          $msp->cart->AddItem($c_item);
+          $c_item->SetMerchantItemId('discount');
+          $c_item->SetTaxTableSelector('BTW0');
+          }
+          }
+
+         */
+        return $shoppingcart_array;
     }
 
-    function checkout_notify($manual_status = '') {
+    /**
+     * 
+     * @param type $needle
+     * @param type $haystack
+     * @param type $strict
+     * @return boolean
+     */
+    function in_array_recursive($needle, $haystack, $strict = false)
+    {
+        foreach ($haystack as $item)
+        {
+            if (($strict ? $item === $needle : $item == $needle) || (is_array($item) && $this->in_array_recursive($needle, $item, $strict))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 
+     * @param type $street_address
+     * @return type
+     */
+    public function parseAddress($street_address)
+    {
+        $address = $street_address;
+        $apartment = "";
+
+        $offset = strlen($street_address);
+
+        while (($offset = $this->rstrpos($street_address, ' ', $offset)) !== false) {
+            if ($offset < strlen($street_address) - 1 && is_numeric($street_address[$offset + 1])) {
+                $address = trim(substr($street_address, 0, $offset));
+                $apartment = trim(substr($street_address, $offset + 1));
+                break;
+            }
+        }
+
+        if (empty($apartment) && strlen($street_address) > 0 && is_numeric($street_address[0])) {
+            $pos = strpos($street_address, ' ');
+
+            if ($pos !== false) {
+                $apartment = trim(substr($street_address, 0, $pos), ", \t\n\r\0\x0B");
+                $address = trim(substr($street_address, $pos + 1));
+            }
+        }
+
+        return array($address, $apartment);
+    }
+
+    /**
+     * 
+     * @param type $haystack
+     * @param type $needle
+     * @param type $offset
+     * @return boolean
+     */
+    public function rstrpos($haystack, $needle, $offset = null)
+    {
+        $size = strlen($haystack);
+
+        if (is_null($offset)) {
+            $offset = $size;
+        }
+
+        $pos = strpos(strrev($haystack), strrev($needle), $size - $offset);
+
+        if ($pos === false) {
+            return false;
+        }
+
+        return $size - $pos - strlen($needle);
+    }
+
+    function checkout_notify($manual_status = '')
+    {
         global $db, $order, $currencies;
         $this->msp = new MultiSafepayAPI();
         $this->msp->plugin_name = $this->plugin_name;
@@ -816,7 +1043,8 @@ class multisafepay_payafter {
 
         $old_order_status = $current_order->fields['orders_status'];
 
-        switch ($status) {
+        switch ($status)
+        {
             case "initialized":
                 $GLOBALS['order']->info['order_status'] = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_INITIALIZED;
                 $new_stat = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_INITIALIZED;
@@ -939,7 +1167,8 @@ class multisafepay_payafter {
 
         $order->products_ordered = '';
 
-        foreach ($order->products as $product) {
+        foreach ($order->products as $product)
+        {
 
 
             $order->products_ordered .= $product['qty'] . ' x ' . $product['name'] . ($product['model'] != '' ? ' (' . $product['model'] . ') ' : '') . ' = ' .
@@ -983,7 +1212,8 @@ class multisafepay_payafter {
         return $status;
     }
 
-    function get_customer($details) {
+    function get_customer($details)
+    {
         global $db;
         $email = $details['customer']['email'];
         //    Check if the email exists
@@ -1089,7 +1319,8 @@ class multisafepay_payafter {
         //  Customer exists, is logged and address book is up to date
     }
 
-    function get_country_from_code($code) {
+    function get_country_from_code($code)
+    {
         global $db;
         //countries_iso_code_2
         $country = $db->Execute("select * from " . TABLE_COUNTRIES . " where countries_iso_code_2 = '" . $code . "'");
@@ -1098,11 +1329,13 @@ class multisafepay_payafter {
         return $country;
     }
 
-    function get_hash($order_id, $customer_id) {
+    function get_hash($order_id, $customer_id)
+    {
         return md5($order_id . $customer_id);
     }
 
-    function _get_error_message($code) {
+    function _get_error_message($code)
+    {
         if (is_numeric($code)) {
             $message = constant(sprintf("MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_ERROR_%04d", $code));
 
@@ -1121,7 +1354,8 @@ class multisafepay_payafter {
         return $message;
     }
 
-    function _error_redirect($error) {
+    function _error_redirect($error)
+    {
         zen_redirect($this->_href_link(
                         FILENAME_SHOPPING_CART, 'payment_error=' . $this->code . '&error=' . $error, 'NONSSL', true, false, false
         ));
@@ -1132,7 +1366,8 @@ class multisafepay_payafter {
     /*
      * Store the order in the database, and set $this->order_id
      */
-    function _save_order() {
+    function _save_order()
+    {
         global $customer_id;
         global $languages_id;
         global $order;
@@ -1207,7 +1442,8 @@ class multisafepay_payafter {
         $insert_id = $db->Insert_ID();
         $zf_insert_id = $insert_id;
 
-        for ($i = 0, $n = sizeof($order_totals); $i < $n; $i++) {
+        for ($i = 0, $n = sizeof($order_totals); $i < $n; $i++)
+        {
             $sql_data_array = array('orders_id' => $insert_id,
                 'title' => $order_totals[$i]['title'],
                 'text' => $order_totals[$i]['text'],
@@ -1224,7 +1460,8 @@ class multisafepay_payafter {
             'comments' => $order->info['comments']);
         zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
 
-        for ($i = 0, $n = sizeof($order->products); $i < $n; $i++) {
+        for ($i = 0, $n = sizeof($order->products); $i < $n; $i++)
+        {
             // Stock Update - Joao Correia
             if (STOCK_LIMITED == 'true') {
                 if (DOWNLOAD_ENABLED == 'true') {
@@ -1296,7 +1533,8 @@ class multisafepay_payafter {
             //$order->products_ordered_attributes = '';
             if (isset($order->products[$i]['attributes'])) {
                 $attributes_exist = '1';
-                for ($j = 0, $n2 = sizeof($order->products[$i]['attributes']); $j < $n2; $j++) {
+                for ($j = 0, $n2 = sizeof($order->products[$i]['attributes']); $j < $n2; $j++)
+                {
                     if (DOWNLOAD_ENABLED == 'true') {
                         $attributes_query = "select popt.products_options_name, poval.products_options_values_name,
                                  pa.options_values_price, pa.price_prefix,
@@ -1395,7 +1633,8 @@ class multisafepay_payafter {
 
     // ---- Ripped from includes/functions/general.php ----
 
-    function _address_format($address_format_id, $address, $html, $boln, $eoln) {
+    function _address_format($address_format_id, $address, $html, $boln, $eoln)
+    {
         global $db;
         $address_format_query = $db->Execute("SELECT address_format AS format FROM " . TABLE_ADDRESS_FORMAT . " WHERE address_format_id = '" . (int) $address_format_id . "'");
         $address_format = $address_format_query; //zen_db_fetch_array($address_format_query);
@@ -1468,7 +1707,8 @@ class multisafepay_payafter {
         return $address;
     }
 
-    function _output_string($string, $translate = false, $protected = false) {
+    function _output_string($string, $translate = false, $protected = false)
+    {
         if ($protected == true) {
             return htmlspecialchars($string);
         } else {
@@ -1480,15 +1720,18 @@ class multisafepay_payafter {
         }
     }
 
-    function _output_string_protected($string) {
+    function _output_string_protected($string)
+    {
         return $this->_output_string($string, false, true);
     }
 
-    function _parse_input_field_data($data, $parse) {
+    function _parse_input_field_data($data, $parse)
+    {
         return strtr(trim($data), $parse);
     }
 
-    function _href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $unused = true, $escape_html = true) {
+    function _href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $unused = true, $escape_html = true)
+    {
         global $request_type, $session_started, $SID;
 
         unset($unused);
@@ -1558,7 +1801,8 @@ class multisafepay_payafter {
     /*
      * Checks whether the payment has been “installed” through the admin panel
      */
-    function check() {
+    function check()
+    {
         global $db;
         if (!isset($this->_check)) {
             $check_query = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_STATUS'");
@@ -1567,19 +1811,23 @@ class multisafepay_payafter {
         return $this->_check;
     }
 
-    /*
+    /**
      * Installs the configuration keys into the database
+     * 
+     * @global type $db
      */
-
-    function install() {
+    function install()
+    {
         global $db;
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('MultiSafepay enabled', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_STATUS', 'True', 'Enable MultiSafepay payments for this website', '6', '20', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Type account', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER', 'Live account', '<a href=\'http://www.multisafepay.com/nl/klantenservice-zakelijk/open-een-testaccount.html\' target=\'_blank\' style=\'text-decoration: underline; font-weight: bold; color:#696916; \'>Sign up for a free test account!</a>', '6', '21', 'zen_cfg_select_option(array(\'Live account\', \'Test account\'), ', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Account ID', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ACCOUNT_ID', '', 'Your merchant account ID', '6', '22', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Site ID', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SITE_ID', '', 'ID of this site', '6', '23', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Site Code', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SITE_SECURE_CODE', '', 'Site code for this site', '6', '24', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Auto Redirect', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_AUTO_REDIRECT', 'True', 'Enable auto redirect after payment', '6', '20', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Display checkout orders', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DISPLAY_CHECKOUT_ORDERS', 'True', 'Displays new BnO orders before the transaction is completed', '6', '20', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('MultiSafepay Pay After Delivery enabled', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_STATUS', 'True', 'Enable MultiSafepay Pay After Delivery module for this website', '6', '20', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Account type', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER', 'Live account', '<a href=\'https://www.multisafepay.com/signup/\' target=\'_blank\' style=\'text-decoration: underline; font-weight: bold; color:#696916; \'>Click here to signup for an account.</a>', '6', '21', 'zen_cfg_select_option(array(\'Live account\', \'Test account\'), ', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('API Key', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_KEY', '', 'Your MultiSafepay API Key', '6', '22', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable Direct Pay After Delivery', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DIRECT', 'False', 'Allow customers to enter their birthday and bankaccount info during checkout.', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Automatically redirect the customer back to the webshop.', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_AUTO_REDIRECT', 'True', 'Enable auto redirect after payment', '6', '20', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Google Analytics', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_GA_ACCOUNT', '', 'Google Analytics Account ID', '6', '22', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Days Active.', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DAYS_ACTIVE', '', 'Allow MultiSafepay to attempt to close unpaid orders after X number of days.', '6', '22', now())");
+
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) VALUES ('Payment Zone', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ZONE', '0', 'If a zone is selected, only enable this payment method for that zone.', '6', '25', 'zen_get_zone_class_title', 'zen_cfg_pull_down_zone_classes(', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Sort order of display.', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SORT_ORDER', '0', 'Sort order of display. Lowest is displayed first.', '6', '0', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) VALUES ('Set Initialized Order Status', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_INITIALIZED', 0, 'In progress', '6', '0', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
@@ -1600,25 +1848,27 @@ class multisafepay_payafter {
      * Removes the configuration keys from the database
      */
 
-    function remove() {
+    function remove()
+    {
         global $db;
         $db->Execute("DELETE FROM " . TABLE_CONFIGURATION . " WHERE configuration_key IN ('" . implode("', '", $this->keys()) . "')");
     }
 
-    /*
-     * Defines an array containing the configuration key keys that are used by
-     * the payment module
+    /**
+     * Defines an array containing the configuration key keys that are used by the payment module
+     * 
+     * @return type
      */
-
-    function keys() {
+    function keys()
+    {
         return array(
             'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_STATUS',
             'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER',
-            'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ACCOUNT_ID',
-            'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SITE_ID',
-            'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SITE_SECURE_CODE',
+            'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_KEY',
+            'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DIRECT',
             'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_AUTO_REDIRECT',
-            'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DISPLAY_CHECKOUT_ORDERS',
+            'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_GA_ACCOUNT',
+            'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DAYS_ACTIVE',
             'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ZONE',
             'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SORT_ORDER',
             'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_INITIALIZED',
@@ -1636,8 +1886,16 @@ class multisafepay_payafter {
         );
     }
 
-    function getlocale($lang) {
-        switch ($lang) {
+    /**
+     * Return locale language code based on $lang provided
+     * 
+     * @param type $lang
+     * @return string
+     */
+    function getlocale($lang)
+    {
+        switch ($lang)
+        {
             case "dutch":
                 $lang = 'nl_NL';
                 break;
@@ -1647,20 +1905,33 @@ class multisafepay_payafter {
             case "french":
                 $lang = 'fr_FR';
                 break;
+            case "italian":
+                $lang = 'it_IT';
+                break;
+            case "portuguese":
+                $lang = 'pt_PT';
+                break;
             case "german":
                 $lang = 'de_DE';
                 break;
             case "english":
-                $lang = 'en_EN';
+                $lang = 'en_GB';
                 break;
             default:
-                $lang = 'en_EN';
+                $lang = 'en_GB';
                 break;
         }
+
         return $lang;
     }
 
-    function getcountry($country) {
+    /**
+     * 
+     * @param type $country
+     * @return type
+     */
+    function getcountry($country)
+    {
         if (empty($country)) {
             $langcode = explode(";", $_SERVER['HTTP_ACCEPT_LANGUAGE']);
             $langcode = explode(",", $langcode['0']);
