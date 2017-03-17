@@ -473,7 +473,8 @@ if (!class_exists('multisafepay')) {
             $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
 
             $response = $this->msp->orders->get('orders', $this->order_id);
-            $status = $response->status;
+            $status   = $response->status;
+            $pspid    = $response->transaction_id;
 
             $order->customer['firstname'] = $response->customer->first_name;
             $order->customer['lastname'] = $response->customer->last_name;
@@ -505,11 +506,10 @@ if (!class_exists('multisafepay')) {
                         $GLOBALS['order']->info['order_status'] = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;
                         $reset_cart = true;
                         $notify_customer = true;
-                        $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;
+                        $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;              
                     } else {
                         $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;
                     }
-
 
                     break;
                 case "uncleared":
@@ -608,26 +608,19 @@ if (!class_exists('multisafepay')) {
 
 
             if ($old_order_status != $new_stat) {
-                // update order
-                $db->Execute("UPDATE " . TABLE_ORDERS . " SET orders_status = " . $new_stat . " WHERE orders_id = " . $this->order_id);
+                $db->Execute("UPDATE " . TABLE_ORDERS . " SET orders_status = " . $new_stat . " WHERE orders_id = " . $this->order_id);         
             }
-
-            //require(DIR_WS_CLASSES . "order.php");
-
 
             $order->products_ordered = '';
 
             foreach ($order->products as $product)
             {
-
-
                 $order->products_ordered .= $product['qty'] . ' x ' . $product['name'] . ($product['model'] != '' ? ' (' . $product['model'] . ') ' : '') . ' = ' .
                         $currencies->display_price($product['final_price'], $product['tax'], $product['qty']) .
                         ($product['onetime_charges'] != 0 ? "\n" . TEXT_ONETIME_CHARGES_EMAIL . $currencies->display_price($product['onetime_charges'], $product['tax'], 1) : '') .
                         $order->products_ordered_attributes . "\n";
                 $i++;
             }
-
 
             if ($notify_customer) {
                 $order->send_order_email($this->order_id, 2);
@@ -636,15 +629,22 @@ if (!class_exists('multisafepay')) {
                 unset($_SESSION['sendto']);
             }
 
-
             // if we don't inform the customer about the update, check if there's a new status. If so, update the order_status_history table accordingly
             $last_osh_status_r = $db->Execute("SELECT orders_status_id FROM " . TABLE_ORDERS_STATUS_HISTORY . " WHERE orders_id = '" . $this->order_id . "' ORDER BY date_added DESC limit 1");
 
             if (($last_osh_status_r->fields['orders_status_id'] != $GLOBALS['order']->info['order_status']) && (!empty($GLOBALS['order']->info['order_status']) )) {
-                $sql_data_array = array('orders_id' => $this->order_id,
-                    'orders_status_id' => $GLOBALS['order']->info['order_status'],
-                    'date_added' => 'now()',
-                    'customer_notified' => 0,
+                
+                if(!is_null($pspid))
+                {
+                    $comment    =   'MultiSafepay ID: ' . $pspid;
+                }                
+                
+                $sql_data_array = array(
+                    'orders_id'         => $this->order_id,
+                    'orders_status_id'  => $GLOBALS['order']->info['order_status'],
+                    'date_added'        =>  'now()',
+                    'customer_notified' =>  0,
+                    'comments'          =>  $comment
                 );
 
                 zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
@@ -691,11 +691,19 @@ if (!class_exists('multisafepay')) {
             ));
         }
 
-        // ---- Ripped from checkout_process.php ----
-
-        /*
+        /**
          * Store the order in the database, and set $this->order_id
+         * 
+         * @global type $customers_id
+         * @global type $languages_id
+         * @global type $order
+         * @global type $shipping
+         * @global type $order_totals
+         * @global type $order_products_id
+         * @global type $db
+         * @return type
          */
+        
         function _save_order()
         {
             global $customers_id;
@@ -718,20 +726,26 @@ if (!class_exists('multisafepay')) {
 
             $customer_id = $_SESSION['customer_id'];
 
+            $data   =   "customer";
+            
+            if(is_null($order->customer['firstname']) || $order->customer['firstname'] === " ")
+            {
+                $data   =   "billing";
+            }
 
-
-            $sql_data_array = array('customers_id' => $customer_id,
-                'customers_name' => $order->customer['firstname'] . ' ' . $order->customer['lastname'],
-                'customers_company' => $order->customer['company'],
-                'customers_street_address' => $order->customer['street_address'],
-                'customers_suburb' => $order->customer['suburb'],
-                'customers_city' => $order->customer['city'],
-                'customers_postcode' => $order->customer['postcode'],
-                'customers_state' => $order->customer['state'],
-                'customers_country' => $order->customer['country']['title'],
-                'customers_telephone' => $order->customer['telephone'],
-                'customers_email_address' => $order->customer['email_address'],
-                'customers_address_format_id' => $order->customer['format_id'],
+            $sql_data_array = array(
+                'customers_id' => $customer_id,
+                'customers_name' => $order->$data['firstname'] . ' ' . $order->$data['lastname'],
+                'customers_company' => $order->$data['company'],
+                'customers_street_address' => $order->$data['street_address'],
+                'customers_suburb' => $order->$data['suburb'],
+                'customers_city' => $order->$data['city'],
+                'customers_postcode' => $order->$data['postcode'],
+                'customers_state' => $order->$data['state'],
+                'customers_country' => $order->$data['country']['title'],
+                'customers_telephone' => $order->$data['telephone'],
+                'customers_email_address' => $order->$data['email_address'],
+                'customers_address_format_id' => $order->$data['format_id'],
                 'delivery_name' => $order->delivery['firstname'] . ' ' . $order->delivery['lastname'],
                 'delivery_company' => $order->delivery['company'],
                 'delivery_street_address' => $order->delivery['street_address'],
@@ -761,7 +775,6 @@ if (!class_exists('multisafepay')) {
                 'orders_status' => $order->info['order_status'],
                 'shipping_module_code' => $order->info['shipping_module_code'],
                 'shipping_method' => $order->info['shipping_method'],
-                //'orders_status' 					=> 	MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_INITIALIZED,
                 'currency' => $GLOBALS['order']->info['currency'],
                 'currency_value' => $order->info['currency_value'],
                 'order_total' => $order->info['total'],
@@ -784,11 +797,13 @@ if (!class_exists('multisafepay')) {
                 zen_db_perform(TABLE_ORDERS_TOTAL, $sql_data_array);
             }
 
-            $sql_data_array = array('orders_id' => $insert_id,
+            $sql_data_array = array(
+                'orders_id' => $insert_id,
                 'orders_status_id' => $order->info['order_status'],
                 'date_added' => 'now()',
                 'customer_notified' => '0',
                 'comments' => $order->info['comments']);
+            
             zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
 
             for ($i = 0, $n = sizeof($order->products); $i < $n; $i++)
@@ -797,12 +812,12 @@ if (!class_exists('multisafepay')) {
                 if (STOCK_LIMITED == 'true') {
                     if (DOWNLOAD_ENABLED == 'true') {
                         $stock_query_raw = "SELECT products_quantity, pad.products_attributes_filename
-											FROM " . TABLE_PRODUCTS . " p
-											LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES . " pa
-											 ON p.products_id=pa.products_id
-											LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES_DOWNLOAD . " pad
-											 ON pa.products_attributes_id=pad.products_attributes_id
-											WHERE p.products_id = '" . zen_get_prid($order->products[$i]['id']) . "'";
+                                            FROM " . TABLE_PRODUCTS . " p
+                                            LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES . " pa
+                                             ON p.products_id=pa.products_id
+                                            LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES_DOWNLOAD . " pad
+                                             ON pa.products_attributes_id=pad.products_attributes_id
+                                            WHERE p.products_id = '" . zen_get_prid($order->products[$i]['id']) . "'";
                         // Will work with only one option for downloadable products
                         // otherwise, we have to build the query dynamically with a loop
                         $products_attributes = $order->products[$i]['attributes'];
@@ -831,14 +846,8 @@ if (!class_exists('multisafepay')) {
                 // Update products_ordered (for bestsellers list)
                 $db->Execute("update " . TABLE_PRODUCTS . " set products_ordered = products_ordered + " . sprintf('%d', $order->products[$i]['qty']) . " where products_id = '" . zen_get_prid($order->products[$i]['id']) . "'");
 
-
-
-
-
-
-
-
-                $sql_data_array = array('orders_id' => $zf_insert_id,
+                $sql_data_array = array(
+                    'orders_id' => $zf_insert_id,
                     'products_id' => zen_get_prid($order->products[$i]['id']),
                     'products_model' => $order->products[$i]['model'],
                     'products_name' => $order->products[$i]['name'],
@@ -852,9 +861,6 @@ if (!class_exists('multisafepay')) {
                     'products_discount_type' => $order->products[$i]['products_discount_type'],
                     'products_discount_type_from' => $order->products[$i]['products_discount_type_from'],
                     'products_prid' => $order->products[$i]['id']);
-
-
-
 
                 zen_db_perform(TABLE_ORDERS_PRODUCTS, $sql_data_array);
 
@@ -912,7 +918,8 @@ if (!class_exists('multisafepay')) {
 
 
                         //clr 030714 update insert query.  changing to use values form $order->products for products_options_values.
-                        $sql_data_array = array('orders_id' => $zf_insert_id,
+                        $sql_data_array = array(
+                            'orders_id' => $zf_insert_id,
                             'orders_products_id' => $order_products_id,
                             'products_options' => $attributes_values->fields['products_options_name'],
                             //                                 'products_options_values' => $attributes_values->fields['products_options_values_name'],
@@ -940,7 +947,6 @@ if (!class_exists('multisafepay')) {
                             'products_prid' => $order->products[$i]['id']
                         );
 
-
                         zen_db_perform(TABLE_ORDERS_PRODUCTS_ATTRIBUTES, $sql_data_array);
 
                         //  $this->notify('NOTIFY_ORDER_DURING_CREATE_ADDED_ATTRIBUTE_LINE_ITEM', $sql_data_array);
@@ -967,8 +973,17 @@ if (!class_exists('multisafepay')) {
             $this->order_id = $insert_id;
         }
 
-        // ---- Ripped from includes/functions/general.php ----
-
+        /**
+         * Ripped from includes/functions/general.php
+         * 
+         * @param type $address_format_id
+         * @param string $address
+         * @param type $html
+         * @param type $boln
+         * @param type $eoln
+         * @return string
+         */
+        
         function _address_format($address_format_id, $address, $html, $boln, $eoln)
         {
             $address_format_query = $db->Execute("SELECT address_format AS format FROM " . TABLE_ADDRESS_FORMAT . " WHERE address_format_id = '" . (int) $address_format_id . "'");
@@ -1042,6 +1057,14 @@ if (!class_exists('multisafepay')) {
             return $address;
         }
 
+        /**
+         * 
+         * @param type $string
+         * @param type $translate
+         * @param type $protected
+         * @return type
+         */
+        
         function _output_string($string, $translate = false, $protected = false)
         {
             if ($protected == true) {
@@ -1055,16 +1078,43 @@ if (!class_exists('multisafepay')) {
             }
         }
 
+        /**
+         * 
+         * @param type $string
+         * @return type
+         */
+        
         function _output_string_protected($string)
         {
             return $this->_output_string($string, false, true);
         }
 
+        /**
+         * 
+         * @param type $data
+         * @param type $parse
+         * @return type
+         */
+        
         function _parse_input_field_data($data, $parse)
         {
             return strtr(trim($data), $parse);
         }
 
+        /**
+         * 
+         * @global type $request_type
+         * @global type $session_started
+         * @global type $SID
+         * @param type $page
+         * @param type $parameters
+         * @param type $connection
+         * @param type $add_session_id
+         * @param type $unused
+         * @param type $escape_html
+         * @return string
+         */
+        
         function _href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $unused = true, $escape_html = true)
         {
             global $request_type, $session_started, $SID;
@@ -1249,7 +1299,7 @@ if (!class_exists('multisafepay')) {
             } else {
 
                 $title .= $this->getLangStr($admin);
-            };
+            }
             return $title;
         }
 

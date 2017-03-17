@@ -8,7 +8,7 @@ if (!empty($GLOBALS['_SESSION']['language'])) {
 }
 require_once(DIR_WS_CLASSES . 'order.php');
 require_once(DIR_WS_CLASSES . 'shipping.php');
-require_once("mspcheckout/include/API/Autoloader.php");
+require_once("mspcheckout/API/Autoloader.php");
 
 $cart = $_SESSION['cart'];
 
