@@ -435,7 +435,12 @@ class multisafepay_klarna {
                 )
             ));
 
-            return $msp->orders->getPaymentLink();
+            if ($trans_type == 'direct') {
+                $payment_url = $msp->orders->getPaymentLink() . "&transactionid=" . $this->order_id;
+                return $payment_url;
+            } else {
+                return $msp->orders->getPaymentLink();
+            }
         } catch (Exception $e) {
             $this->_error_redirect(htmlspecialchars($e->getMessage()));
             die();
@@ -743,7 +748,6 @@ class multisafepay_klarna {
                 } else {
                     $new_stat = MODULE_PAYMENT_MULTISAFEPAY_KLARNA_ORDER_STATUS_ID_COMPLETED;
                 }
-
 
                 break;
             case "uncleared":
@@ -1264,6 +1268,14 @@ class multisafepay_klarna {
         return $address;
     }
 
+    /**
+     * 
+     * @param type $string
+     * @param type $translate
+     * @param type $protected
+     * @return type
+     */
+    
     function _output_string($string, $translate = false, $protected = false)
     {
         if ($protected == true) {
