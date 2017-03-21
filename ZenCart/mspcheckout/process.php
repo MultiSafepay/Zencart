@@ -5,6 +5,8 @@ require_once("includes/application_top.php");
 require_once("includes/modules/payment/multisafepay_fastcheckout.php");
 if (!empty($GLOBALS['_SESSION']['language'])) {
     require_once('includes/languages/' . $GLOBALS['_SESSION']['language'] . '/modules/payment/multisafepay_fastcheckout.php');
+}else{
+    require_once('includes/languages/en/modules/payment/multisafepay_fastcheckout.php');
 }
 require_once(DIR_WS_CLASSES . 'order.php');
 require_once(DIR_WS_CLASSES . 'shipping.php');
@@ -21,15 +23,11 @@ if ($cart->count_contents() == 0) {
 
 $msp = new multisafepay_fastcheckout();
 
-// Create Classes
 $order = new order;
 
 $total_weight = $cart->show_weight();
 $total_count = $cart->count_contents();
 
-
-
-// from shipping.php:
 $shipping_num_boxes = 1;
 $shipping_weight = $total_weight;
 
@@ -39,11 +37,10 @@ if (SHIPPING_BOX_WEIGHT >= $shipping_weight * SHIPPING_BOX_PADDING / 100) {
     $shipping_weight = $shipping_weight + ($shipping_weight * SHIPPING_BOX_PADDING / 100);
 }
 
-if ($shipping_weight > SHIPPING_MAX_WEIGHT) { // Split into many boxes
+if ($shipping_weight > SHIPPING_MAX_WEIGHT) {
     $shipping_num_boxes = ceil($shipping_weight / SHIPPING_MAX_WEIGHT);
     $shipping_weight = $shipping_weight / $shipping_num_boxes;
 }
-
 
 $tax_class = array();
 $shipping_arr = array();
@@ -76,18 +73,12 @@ if ($dir = @ dir($module_directory)) {
     $dir->close();
 }
 
-
-
-
 $check_query = $db->Execute("select countries_iso_code_2
                              from " . TABLE_COUNTRIES . "
                              where countries_id =
                              '" . SHIPPING_ORIGIN_COUNTRY . "'");
 
-
 $shipping_origin_iso_code_2 = $check_query->fields['countries_iso_code_2'];
-
-
 
 // load modules
 $module_info = array();
@@ -136,9 +127,6 @@ for ($i = 0, $n = sizeof($directory_array); $i < $n; $i++)
         $shipping_modules[$module->code] = $module;
     }
 }
-
-
-
 
 /*
  * Get shipping prices
@@ -193,7 +181,6 @@ foreach ($module_info as $key => $value)
             $tax_class_unique[] = $curr_tax_class;
     }
 
-
     if (empty($quote['error']) && $quote['id'] != 'zones') {
         foreach ($quote['methods'] as $method)
         {
@@ -247,8 +234,6 @@ foreach ($module_info as $key => $value)
     }
 }
 
-
-
 /*
  * Tax stuff
  */
@@ -291,8 +276,6 @@ if (sizeof($tax_class_unique) == 1) {
         exit();
     }
 
-//  $tax_result = $db->Execute($tax_rates_result);
-//  $rate = ((double) ($tax_result->fields['tax_rate'])) / 100.0;
     $rate = ((double) ($tax_rates_result->fields['tax_rate'])) / 100.0;
 
     $taxes['default'] = $rate;

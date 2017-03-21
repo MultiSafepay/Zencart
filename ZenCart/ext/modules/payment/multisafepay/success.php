@@ -2,12 +2,12 @@
 
 chdir('../../../../');
 
-// LOAD ZENCART DATA
 require('includes/application_top.php');
 require("includes/modules/payment/multisafepay.php");
 require("includes/modules/payment/multisafepay_fastcheckout.php");
 require("includes/modules/payment/multisafepay_payafter.php");
 require("includes/modules/payment/multisafepay_klarna.php");
+require("includes/modules/payment/multisafepay_einvoice.php");
 require($template->get_template_dir('main_template_vars.php', DIR_WS_TEMPLATE, $current_page_base, 'common') . '/main_template_vars.php');
 
 $_SESSION['cart']->reset(true);
@@ -19,18 +19,16 @@ unset($_SESSION['comments']);
 $_SESSION['order_number_created'] = $_GET['transactionid'];
 
 if (empty($_GET['transactionid'])) {
-    $message = "No transaction ID supplied";
-    $url = zen_href_link(FILENAME_CHECKOUT_PAYMENT, 'payment_error=' . $payment_module->code . '&error=' . urlencode($message), 'NONSSL', true, false);
+    $message=   "No transaction ID supplied";
+    $url    =   zen_href_link(FILENAME_CHECKOUT_PAYMENT, 'payment_error=' . $payment_module->code . '&error=' . urlencode($message), 'NONSSL', true, false);
 } else {
-    // load selected payment module
     global $db;
+    
     $_SESSION['cart']->reset(true);
 
     require(DIR_WS_CLASSES . "order.php");
     $order = new order($_GET['transactionid']);
-    if ($_GET['type'] != 'shipping') {
-        //print_r($order);exit;
-    }
+
     $order_status_query = $db->Execute("SELECT orders_status_id FROM " . TABLE_ORDERS_STATUS . " WHERE orders_status_name = '" . $order->info['orders_status'] . "' AND language_id = '" . $languages_id . "'");
 
     $order->info['order_status'] = $order_status_query->fields['orders_status_id'];

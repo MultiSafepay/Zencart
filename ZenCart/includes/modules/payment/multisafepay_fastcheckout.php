@@ -948,8 +948,8 @@ class multisafepay_fastcheckout {
             $msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_FCO_API_KEY);
 
             $response = $msp->orders->get('orders', $this->order_id);
-            $status =   $response->status;
-            $pspid  =   $response->transaction_id;
+            $status = $response->status;
+            $pspid = $response->transaction_id;
         } catch (Exception $e) {
             return htmlspecialchars($e->getMessage());
         }
@@ -975,7 +975,7 @@ class multisafepay_fastcheckout {
                 $shipping_module_code = $value['code'];
             }
         }
-        
+
         $sql_data_array = array
             (
             'customers_name' => $response->customer->first_name . ' ' . $response->customer->last_name,
@@ -1050,10 +1050,10 @@ class multisafepay_fastcheckout {
         $title = $response->order_adjustment->shipping->flat_rate_shipping->name;
         $text = $currencies->format($value, false, $GLOBALS['order']->info['currency'], $currencies->currencies[$currency]['value']);
 
-        if ($check_shipping) { 
+        if ($check_shipping) {
             $query = "UPDATE " . TABLE_ORDERS_TOTAL . " SET title = '" . $title . "', value = '" . $value . "', text = '" . $text . "' WHERE class = 'ot_shipping' AND orders_id = '" . $this->order_id . "'";
             $db->Execute($query);
-        } else {   
+        } else {
             $query = "INSERT INTO " . TABLE_ORDERS_TOTAL . "(orders_id, title, text, value, class, sort_order) VALUES ('" . $this->order_id . "','" . $title . "','" . $text . "','" . $value . "','ot_shipping','2')";
             $db->Execute($query);
         }
@@ -1349,11 +1349,10 @@ class multisafepay_fastcheckout {
      * 
      * @param type $error
      */
-    
     function _error_redirect($error)
     {
         global $messageStack;
-        
+
         $messageStack->add_session('shopping_cart', $error, 'error');
         zen_redirect('../index.php?main_page=' . FILENAME_SHOPPING_CART);
     }
@@ -1388,9 +1387,9 @@ class multisafepay_fastcheckout {
             return;
         }
 
-        /*if (MODULE_PAYMENT_MULTISAFEPAY_FCO_DISPLAY_CHECKOUT_ORDERS == 'False') {
-            $order->info['order_status'] = 0;
-        }*/
+        /* if (MODULE_PAYMENT_MULTISAFEPAY_FCO_DISPLAY_CHECKOUT_ORDERS == 'False') {
+          $order->info['order_status'] = 0;
+          } */
 
         $sql_data_array = array(
             'customers_id' => $customer_id,
@@ -1450,7 +1449,7 @@ class multisafepay_fastcheckout {
                 'class' => $order_totals[$i]['code'],
                 'sort_order' => $order_totals[$i]['sort_order']
             );
-            
+
             zen_db_perform(TABLE_ORDERS_TOTAL, $sql_data_array);
         }
 
@@ -1898,7 +1897,7 @@ class multisafepay_fastcheckout {
             'MODULE_PAYMENT_MULTISAFEPAY_FCO_ORDER_STATUS_ID_EXPIRED'
         );
     }
-    
+
     /**
      * Return locale language code based on $lang provided
      * 

@@ -17,7 +17,6 @@ class multisafepay_einvoice {
     var $order_id;
     var $public_title;
     var $status;
-    var $shipping_methods = array();
     var $taxes = array();
     var $_customer_id = 0;
 
@@ -67,7 +66,6 @@ class multisafepay_einvoice {
      * @param type $admin
      * @return type
      */
-    
     function getTitle($admin = 'title')
     {
         $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
@@ -88,7 +86,6 @@ class multisafepay_einvoice {
      * @param type $str
      * @return type
      */
-    
     function getLangStr($str)
     {
         $holder = $str;
@@ -101,7 +98,6 @@ class multisafepay_einvoice {
      * @param type $icon
      * @return type
      */
-    
     function generateIcon($icon)
     {
         return zen_image($icon, '', 50, 23, 'style="display:inline-block;vertical-align: middle;height:100%;margin-right:10px;"');
@@ -112,7 +108,6 @@ class multisafepay_einvoice {
      * @global type $PHP_SELF
      * @return type
      */
-    
     function getScriptName()
     {
         global $PHP_SELF;
@@ -123,7 +118,6 @@ class multisafepay_einvoice {
      * 
      * @return string
      */
-    
     function getIcon()
     {
         $icon = DIR_WS_IMAGES . "multisafepay/en/" . $this->icon;
@@ -141,7 +135,6 @@ class multisafepay_einvoice {
      * @param type $savedSetting
      * @return string
      */
-    
     function getUserLanguage($savedSetting)
     {
         global $db;
@@ -164,7 +157,6 @@ class multisafepay_einvoice {
      * 
      * @return string
      */
-    
     function checkView()
     {
         $view = "admin";
@@ -185,7 +177,6 @@ class multisafepay_einvoice {
      * @global type $order
      * @global type $db
      */
-
     function update_status()
     {
         global $order, $db;
@@ -210,21 +201,26 @@ class multisafepay_einvoice {
         }
     }
 
-    // ---- select payment module ----
-
-    /*
-     * Client side javascript that will verify any input fields you use in the
-     * payment method selection page
+    /**
+     * Client side javascript that will verify any input fields you use in the payment method selection page
+     * 
+     * @return boolean
      */
     function javascript_validation()
     {
         return false;
     }
 
-    /*
+    /**
      * Outputs the payment method title/text and if required, the input fields
+     * 
+     * @global type $customer_id
+     * @global type $languages_id
+     * @global type $order
+     * @global type $order_totals
+     * @global type $order_products_id
+     * @return type
      */
-
     function selection()
     {
         global $customer_id;
@@ -244,10 +240,11 @@ class multisafepay_einvoice {
         );
     }
 
-    /*
+    /**
      * Any checks of any conditions after payment method has been selected
+     * 
+     * @return boolean
      */
-
     function pre_confirmation_check()
     {
         return false;
@@ -255,21 +252,21 @@ class multisafepay_einvoice {
 
     // ---- confirm order ----
 
-    /*
-     * Any checks or processing on the order information before proceeding to
-     * payment confirmation
+    /**
+     * Any checks or processing on the order information before proceeding to payment confirmation
+     * 
+     * @return boolean
      */
-    
     function confirmation()
     {
         return false;
     }
 
-    /*
-     * Outputs the html form hidden elements sent as POST data to the payment
-     * gateway
+    /**
+     * Outputs the html form hidden elements sent as POST data to the payment gateway
+     * 
+     * @return boolean
      */
-
     function process_button()
     {
         if (MODULE_PAYMENT_MULTISAFEPAY_EINVOICE_DIRECT === 'True') {
@@ -284,13 +281,12 @@ class multisafepay_einvoice {
      * 
      * @return type
      */
-    
     function create_einvoiceinput()
     {
         $output = '<div class="einvoicebox" style="padding:20px;border:1px solid #d50172; margin-top:20px;text-align:center">';
         $output .= '<img src="images/multisafepay/en/einvoice-big.png" border="0" width="175" /><br /><br />';
-        $output .= '<label>Bankaccount: </label><input type="text" name="pad_bankaccount"style="width:200px; padding: 0px; margin-left: 7px;"><br/>';
-        $output .= '<label>Birthday: </label><input type="text" name="pad_birthday" placeholder="DD-MM-YYYY" style="width:200px; padding: 0px; margin-left: 35px;">';
+        $output .= '<label>Bankaccount: </label><input type="text" name="einv_bankaccount"style="width:200px; padding: 0px; margin-left: 7px;"><br/>';
+        $output .= '<label>Birthday: </label><input type="text" name="einv_birthday" placeholder="DD-MM-YYYY" style="width:200px; padding: 0px; margin-left: 35px;">';
         $output .= '<div style="clear:both;"></div></div><br/>';
 
         return ($output);
@@ -299,28 +295,27 @@ class multisafepay_einvoice {
     /**
      * Payment verification
      */
-    
     function before_process()
     {
         $this->_save_order();
         zen_redirect($this->_start_einvoice());
     }
 
-    /*
+    /**
      * Post-processing of the payment/order after the order has been finalised
+     * 
+     * @return boolean
      */
-
     function after_process()
     {
         return false;
     }
 
-    // ---- error handling ----
-
-    /*
+    /**
      * Advanced error handling
+     * 
+     * @return boolean
      */
-    
     function output_error()
     {
         return false;
@@ -330,7 +325,6 @@ class multisafepay_einvoice {
      * 
      * @return type
      */
-    
     function _start_einvoice()
     {
         $items_list = "<ul>\n";
@@ -357,7 +351,7 @@ class multisafepay_einvoice {
             $trans_type = 'redirect';
         }
 
-        if ($_POST['pad_bankaccount'] == "" || $_POST['pad_birthday'] == "") {
+        if ($_POST['einv_bankaccount'] == "" || $_POST['einv_birthday'] == "") {
             $trans_type = 'redirect';
         }
 
@@ -433,8 +427,8 @@ class multisafepay_einvoice {
                     "email" => $GLOBALS['order']->customer['email_address']
                 ),
                 "gateway_info" => array(
-                    "birthday" => $_POST['pad_birthday'],
-                    "bank_account" => $_POST['pad_bankaccount'],
+                    "birthday" => $_POST['einv_birthday'],
+                    "bank_account" => $_POST['einv_bankaccount'],
                     "phone" => $GLOBALS['order']->customer['telephone'],
                     "referrer" => $_SERVER['HTTP_REFERER'],
                     "user_agent" => $_SERVER['HTTP_USER_AGENT'],
@@ -448,13 +442,18 @@ class multisafepay_einvoice {
                 "plugin" => array(
                     "shop" => PROJECT_VERSION_NAME,
                     "shop_version" => PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR,
-                    "plugin_version" => 'ZenCart 3.0.0',
+                    "plugin_version" => $this->plugin_ver,
                     "partner" => 'MultiSafepay',
                     "shop_root_url" => $_SERVER['SERVER_NAME']
                 )
             ));
 
-            return $msp->orders->getPaymentLink();
+            if ($trans_type == 'direct') {
+                $payment_url = $msp->orders->getPaymentLink() . "&transactionid=" . $this->order_id;
+                return $payment_url;
+            } else {
+                return $msp->orders->getPaymentLink();
+            }
         } catch (Exception $e) {
             $this->_error_redirect(htmlspecialchars($e->getMessage()));
             die();
@@ -467,7 +466,6 @@ class multisafepay_einvoice {
      * @global type $order
      * @return array
      */
-    
     function getCheckoutOptions()
     {
         global $order;
@@ -531,7 +529,6 @@ class multisafepay_einvoice {
      * @global type $order
      * @return type array
      */
-    
     function getShoppingCart()
     {
         $shoppingcart_array = array();
@@ -630,7 +627,6 @@ class multisafepay_einvoice {
      * @param type $strict
      * @return boolean
      */
-    
     function in_array_recursive($needle, $haystack, $strict = false)
     {
         foreach ($haystack as $item)
@@ -647,7 +643,6 @@ class multisafepay_einvoice {
      * @param type $street_address
      * @return type
      */
-    
     public function parseAddress($street_address)
     {
         $address = $street_address;
@@ -682,7 +677,6 @@ class multisafepay_einvoice {
      * @param type $offset
      * @return boolean
      */
-    
     public function rstrpos($haystack, $needle, $offset = null)
     {
         $size = strlen($haystack);
@@ -705,7 +699,6 @@ class multisafepay_einvoice {
      * @param type $error
      * @return type
      */
-    
     public function getErrorcode($error)
     {
         return substr($error, 0, 4);
@@ -719,7 +712,6 @@ class multisafepay_einvoice {
      * @param type $manual_status
      * @return type
      */
-    
     function checkout_notify($manual_status = '')
     {
         global $db, $order, $currencies;
@@ -928,7 +920,6 @@ class multisafepay_einvoice {
      * @param type $code
      * @return type
      */
-    
     function get_country_from_code($code)
     {
         global $db;
@@ -944,7 +935,6 @@ class multisafepay_einvoice {
      * @param type $customer_id
      * @return type
      */
-    
     function get_hash($order_id, $customer_id)
     {
         return md5($order_id . $customer_id);
@@ -954,7 +944,6 @@ class multisafepay_einvoice {
      * 
      * @param type $error
      */
-    
     function _error_redirect($error)
     {
         global $messageStack;
@@ -962,7 +951,6 @@ class multisafepay_einvoice {
         $messageStack->add_session('checkout_payment', $error, 'error');
         zen_redirect('index.php?main_page=' . FILENAME_CHECKOUT_PAYMENT);
     }
-
 
     /**
      * Store the order in the database, and set $this->order_id
@@ -975,7 +963,6 @@ class multisafepay_einvoice {
      * @global type $db
      * @return type
      */
-    
     function _save_order()
     {
         global $customer_id;
@@ -1319,7 +1306,6 @@ class multisafepay_einvoice {
      * @param type $protected
      * @return type
      */
-    
     function _output_string($string, $translate = false, $protected = false)
     {
         if ($protected == true) {
@@ -1338,7 +1324,6 @@ class multisafepay_einvoice {
      * @param type $string
      * @return type
      */
-    
     function _output_string_protected($string)
     {
         return $this->_output_string($string, false, true);
@@ -1350,7 +1335,6 @@ class multisafepay_einvoice {
      * @param type $parse
      * @return type
      */
-    
     function _parse_input_field_data($data, $parse)
     {
         return strtr(trim($data), $parse);
@@ -1369,7 +1353,6 @@ class multisafepay_einvoice {
      * @param type $escape_html
      * @return string
      */
-    
     function _href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $unused = true, $escape_html = true)
     {
         global $request_type, $session_started, $SID;
@@ -1405,11 +1388,10 @@ class multisafepay_einvoice {
             $separator = '?';
         }
 
-        while ((substr($link, -1) == '&') || (substr($link, -1) == '?'))
-        {
+        while ((substr($link, -1) == '&') || (substr($link, -1) == '?')) {
             $link = substr($link, 0, -1);
         }
-        
+
         if (($add_session_id == true) && ($session_started == true) && (SESSION_FORCE_COOKIE_USE == 'False')) {
             if (zen_not_null($SID)) {
                 $_sid = $SID;
@@ -1441,7 +1423,6 @@ class multisafepay_einvoice {
      * @global type $db
      * @return type
      */
-    
     function check()
     {
         global $db;
@@ -1457,7 +1438,6 @@ class multisafepay_einvoice {
      * 
      * @global type $db
      */
-    
     function install()
     {
         global $db;
@@ -1491,7 +1471,6 @@ class multisafepay_einvoice {
      * 
      * @global type $db
      */
-
     function remove()
     {
         global $db;
@@ -1503,7 +1482,6 @@ class multisafepay_einvoice {
      * 
      * @return type
      */
-    
     function keys()
     {
         return array(
@@ -1537,7 +1515,6 @@ class multisafepay_einvoice {
      * @param type $lang
      * @return string
      */
-    
     function getlocale($lang)
     {
         switch ($lang)

@@ -10,8 +10,9 @@ require("includes/modules/payment/multisafepay.php");
 require("includes/modules/payment/multisafepay_fastcheckout.php");
 require("includes/modules/payment/multisafepay_payafter.php");
 require("includes/modules/payment/multisafepay_klarna.php");
-$initial_request = ($_GET['type'] == 'initial');
+require("includes/modules/payment/multisafepay_einvoice.php");
 
+$initial_request = ($_GET['type'] == 'initial');
 
 if (empty($_GET['transactionid'])) {
     $message = "No transaction ID supplied";

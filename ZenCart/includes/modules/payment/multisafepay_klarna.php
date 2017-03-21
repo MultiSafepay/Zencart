@@ -17,7 +17,6 @@ class multisafepay_klarna {
     var $order_id;
     var $public_title;
     var $status;
-    var $shipping_methods = array();
     var $taxes = array();
     var $_customer_id = 0;
 
@@ -429,7 +428,7 @@ class multisafepay_klarna {
                 "plugin" => array(
                     "shop" => PROJECT_VERSION_NAME,
                     "shop_version" => PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR,
-                    "plugin_version" => 'ZenCart 3.0.0',
+                    "plugin_version" => $this->plugin_ver,
                     "partner" => 'MultiSafepay',
                     "shop_root_url" => $_SERVER['SERVER_NAME']
                 )
@@ -835,7 +834,7 @@ class multisafepay_klarna {
             default:
                 $GLOBALS['order']->info['order_status'] = DEFAULT_ORDERS_STATUS_ID;
         }
-        
+
         $order_status_query = $db->Execute("SELECT orders_status_name FROM " . TABLE_ORDERS_STATUS . " WHERE orders_status_id = '" . $GLOBALS['order']->info['order_status'] . "' AND language_id = '" . $GLOBALS['languages_id'] . "'");
         $order_status = $order_status_query; //zen_db_fetch_array($order_status_query);
 
@@ -897,7 +896,6 @@ class multisafepay_klarna {
      * @param type $code
      * @return type
      */
-    
     function get_country_from_code($code)
     {
         global $db;
@@ -913,7 +911,6 @@ class multisafepay_klarna {
      * @param type $customer_id
      * @return type
      */
-    
     function get_hash($order_id, $customer_id)
     {
         return md5($order_id . $customer_id);
@@ -923,7 +920,6 @@ class multisafepay_klarna {
      * 
      * @param type $error
      */
-    
     function _error_redirect($error)
     {
         global $messageStack;
@@ -943,7 +939,6 @@ class multisafepay_klarna {
      * @global type $db
      * @return type
      */
-    
     function _save_order()
     {
         global $customer_id;
@@ -1275,7 +1270,6 @@ class multisafepay_klarna {
      * @param type $protected
      * @return type
      */
-    
     function _output_string($string, $translate = false, $protected = false)
     {
         if ($protected == true) {
@@ -1294,7 +1288,6 @@ class multisafepay_klarna {
      * @param type $string
      * @return type
      */
-    
     function _output_string_protected($string)
     {
         return $this->_output_string($string, false, true);
@@ -1306,7 +1299,6 @@ class multisafepay_klarna {
      * @param type $parse
      * @return type
      */
-    
     function _parse_input_field_data($data, $parse)
     {
         return strtr(trim($data), $parse);
@@ -1325,7 +1317,6 @@ class multisafepay_klarna {
      * @param type $escape_html
      * @return string
      */
-    
     function _href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $unused = true, $escape_html = true)
     {
         global $request_type, $session_started, $SID;
@@ -1362,8 +1353,7 @@ class multisafepay_klarna {
             $separator = '?';
         }
 
-        while ((substr($link, -1) == '&') || (substr($link, -1) == '?'))
-        {
+        while ((substr($link, -1) == '&') || (substr($link, -1) == '?')) {
             $link = substr($link, 0, -1);
         }
 

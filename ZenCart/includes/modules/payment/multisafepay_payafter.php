@@ -179,7 +179,6 @@ class multisafepay_payafter {
      * @global type $order
      * @global type $db
      */
-
     function update_status()
     {
         global $order, $db;
@@ -281,7 +280,7 @@ class multisafepay_payafter {
     {
 
         $output = '<div class="padbox" style="padding:20px;border:1px solid #d50172; margin-top:20px;text-align:center">';
-        $output .= '<img src="images/multisafepay/en/payafter-big.png" border="0" width="175" /><br /><br />';        
+        $output .= '<img src="images/multisafepay/en/payafter-big.png" border="0" width="175" /><br /><br />';
         $output .= '<label>Bankaccount: </label><input type="text" name="pad_bankaccount"style="width:200px; padding: 0px; margin-left: 7px;"><br/>';
         $output .= '<label>Birthday: </label><input type="text" name="pad_birthday" placeholder="DD-MM-YYYY" style="width:200px; padding: 0px; margin-left: 35px;">';
         $output .= '<div style="clear:both;"></div></div><br/>';
@@ -445,6 +444,7 @@ class multisafepay_payafter {
                     "shop_root_url" => $_SERVER['SERVER_NAME']
                 )
             ));
+
             if ($trans_type == 'direct') {
                 $payment_url = $msp->orders->getPaymentLink() . "&transactionid=" . $this->order_id;
                 return $payment_url;
@@ -452,10 +452,9 @@ class multisafepay_payafter {
                 return $msp->orders->getPaymentLink();
             }
         } catch (Exception $e) {
-            if($this->getErrorcode($e->getMessage()) == "1024")
-            {
+            if ($this->getErrorcode($e->getMessage()) == "1024") {
                 $this->_error_redirect(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_ERROR_1024);
-                die();                
+                die();
             } else {
                 $this->_error_redirect(htmlspecialchars($e->getMessage()));
                 die();
@@ -702,12 +701,11 @@ class multisafepay_payafter {
      * @param type $error
      * @return type
      */
-    
     public function getErrorcode($error)
-    {        
+    {
         return substr($error, 0, 4);
     }
-    
+
     /**
      * 
      * @global type $db
