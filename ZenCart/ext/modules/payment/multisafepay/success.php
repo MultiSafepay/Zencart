@@ -7,6 +7,7 @@ require('includes/application_top.php');
 require("includes/modules/payment/multisafepay.php");
 require("includes/modules/payment/multisafepay_fastcheckout.php");
 require("includes/modules/payment/multisafepay_payafter.php");
+require("includes/modules/payment/multisafepay_klarna.php");
 require($template->get_template_dir('main_template_vars.php', DIR_WS_TEMPLATE, $current_page_base, 'common') . '/main_template_vars.php');
 
 $_SESSION['cart']->reset(true);
@@ -19,9 +20,7 @@ $_SESSION['order_number_created'] = $_GET['transactionid'];
 
 if (empty($_GET['transactionid'])) {
     $message = "No transaction ID supplied";
-    $url = zen_href_link(
-            FILENAME_CHECKOUT_PAYMENT, 'payment_error=' . $payment_module->code . '&error=' . urlencode($message), 'NONSSL', true, false
-    );
+    $url = zen_href_link(FILENAME_CHECKOUT_PAYMENT, 'payment_error=' . $payment_module->code . '&error=' . urlencode($message), 'NONSSL', true, false);
 } else {
     // load selected payment module
     global $db;
@@ -39,7 +38,6 @@ if (empty($_GET['transactionid'])) {
     require(DIR_WS_CLASSES . "order_total.php");
     $order_total_modules = new order_total();
 
-    // set some globals (expected by osCommerce)
     $customer_id = $order->customer['id'];
     $order_totals = $order->totals;
 
@@ -50,14 +48,18 @@ if (empty($_GET['transactionid'])) {
 
     $payment_module->order_id = $_GET['transactionid'];
     $transdata = $payment_module->check_transaction();
-
+    
     if ($payment_module->msp->orders->data->fastcheckout == "NO") {
-
-        if ($payment_module->msp->details['paymentdetails']['type'] == "PAYAFTER") {
+        $merchant_order_id   =   $payment_module->msp->orders->data->order_id;
+        if ($payment_module->msp->orders->data->payment_details->type == "PAYAFTER") {
             $payment_module = new multisafepay_payafter();
-            $payment_module->order_id = $_GET['transactionid'];
+            $payment_module->order_id = $merchant_order_id; //$_GET['transactionid'];
             $_SESSION['payment'] = 'multisafepay_payafter';
-        }
+        }elseif ($payment_module->msp->orders->data->payment_details->type == "KLARNA") {
+            $payment_module = new multisafepay_klarna();
+            $payment_module->order_id = $merchant_order_id; //$_GET['transactionid'];
+            $_SESSION['payment'] = 'multisafepay_klarna';
+        }        
     } else {
         $payment_module = new multisafepay_fastcheckout();
         $payment_module->order_id = $_GET['transactionid'];

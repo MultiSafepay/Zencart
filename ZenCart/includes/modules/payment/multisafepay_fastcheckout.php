@@ -33,7 +33,6 @@ class multisafepay_fastcheckout {
         $this->title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_FCO_TEXT_TITLE);
         $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_FCO_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MULTISAFEPAY_FCO_SORT_ORDER;
-        $this->plugin_name = $this->plugin_ver;
         $this->order_status = MODULE_PAYMENT_MULTISAFEPAY_FCO_ORDER_STATUS_ID_INITIALIZED;
 
         if (is_object($order)) {
@@ -542,21 +541,6 @@ class multisafepay_fastcheckout {
 
     /**
      * 
-     * @return type
-     */
-    function get_error()
-    {
-        $error = array
-            (
-            'title' => MODULE_PAYMENT_MULTISAFEPAY_FCO_TEXT_ERROR,
-            'error' => $this->_get_error_message($_GET['error'])
-        );
-
-        return $error;
-    }
-
-    /**
-     * 
      * @return boolean
      */
     function isNewAddressQuery()
@@ -767,8 +751,8 @@ class multisafepay_fastcheckout {
 
             return $msp->orders->getPaymentLink();
         } catch (Exception $e) {
-            echo '(MultiSafepay) ' . htmlspecialchars($e->getMessage());
-            exit;
+            $this->_error_redirect(htmlspecialchars($e->getMessage()));
+            die();
         }
     }
 
@@ -1212,7 +1196,7 @@ class multisafepay_fastcheckout {
                 'orders_id' => $this->order_id,
                 'orders_status_id' => $GLOBALS['order']->info['order_status'],
                 'date_added' => 'now()',
-                'customer_notified' => 0,
+                'customer_notified' => 1,
                 'comments' => $comment
             );
 
@@ -1363,36 +1347,15 @@ class multisafepay_fastcheckout {
 
     /**
      * 
-     * @param type $code
-     * @return type
-     */
-    function _get_error_message($code)
-    {
-        if (is_numeric($code)) {
-            $message = constant(sprintf("MODULE_PAYMENT_MULTISAFEPAY_FCO_TEXT_ERROR_%04d", $code));
-
-            if (!$message) {
-                $message = MODULE_PAYMENT_MULTISAFEPAY_FCO_TEXT_ERROR_UNKNOWN;
-            }
-        } else {
-            $const = sprintf("MODULE_PAYMENT_MULTISAFEPAY_FCO_TEXT_ERROR_%s", strtoupper($code));
-
-            if (defined($const)) {
-                $message = constant($const);
-            } else {
-                $message = $code;
-            }
-        }
-        return $message;
-    }
-
-    /**
-     * 
      * @param type $error
      */
+    
     function _error_redirect($error)
     {
-        zen_redirect($this->_href_link(FILENAME_SHOPPING_CART, 'payment_error=' . $this->code . '&error=' . $error, 'NONSSL', true, false, false));
+        global $messageStack;
+        
+        $messageStack->add_session('shopping_cart', $error, 'error');
+        zen_redirect('../index.php?main_page=' . FILENAME_SHOPPING_CART);
     }
 
     /**
@@ -1425,9 +1388,9 @@ class multisafepay_fastcheckout {
             return;
         }
 
-        if (MODULE_PAYMENT_MULTISAFEPAY_FCO_DISPLAY_CHECKOUT_ORDERS == 'False') {
+        /*if (MODULE_PAYMENT_MULTISAFEPAY_FCO_DISPLAY_CHECKOUT_ORDERS == 'False') {
             $order->info['order_status'] = 0;
-        }
+        }*/
 
         $sql_data_array = array(
             'customers_id' => $customer_id,
@@ -1875,7 +1838,7 @@ class multisafepay_fastcheckout {
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Automatically redirect the customer back to the webshop.', 'MODULE_PAYMENT_MULTISAFEPAY_FCO_AUTO_REDIRECT', 'True', 'Enable auto redirect after payment', '6', '20', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Google Analytics', 'MODULE_PAYMENT_MULTISAFEPAY_FCO_GA_ACCOUNT', '', 'Google Analytics Account ID', '6', '22', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Days Active.', 'MODULE_PAYMENT_MULTISAFEPAY_FCO_DAYS_ACTIVE', '', 'Allow MultiSafepay to attempt to close unpaid orders after X number of days.', '6', '22', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Display checkout orders', 'MODULE_PAYMENT_MULTISAFEPAY_FCO_DISPLAY_CHECKOUT_ORDERS', 'True', 'Displays new FastCheckout orders before the transaction is completed.', '6', '20', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+        //$db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Display checkout orders', 'MODULE_PAYMENT_MULTISAFEPAY_FCO_DISPLAY_CHECKOUT_ORDERS', 'True', 'Displays new FastCheckout orders before the transaction is completed.', '6', '20', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) VALUES ('Payment Zone', 'MODULE_PAYMENT_MULTISAFEPAY_FCO_ZONE', '0', 'If a zone is selected, only enable this payment method for that zone.', '6', '25', 'zen_get_zone_class_title', 'zen_cfg_pull_down_zone_classes(', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Sort order of display.', 'MODULE_PAYMENT_MULTISAFEPAY_FCO_SORT_ORDER', '0', 'Sort order of display. Lowest is displayed first.', '6', '0', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('FastCheckout button color', 'MODULE_PAYMENT_MULTISAFEPAY_FCO_BTN_COLOR', 'Orange', 'Select the color of the FastCheckout button.', '6', '0', 'zen_cfg_select_option(array(\'Orange\', \'Black\'), ', now())");
@@ -1919,7 +1882,7 @@ class multisafepay_fastcheckout {
             'MODULE_PAYMENT_MULTISAFEPAY_FCO_AUTO_REDIRECT',
             'MODULE_PAYMENT_MULTISAFEPAY_FCO_GA_ACCOUNT',
             'MODULE_PAYMENT_MULTISAFEPAY_FCO_DAYS_ACTIVE',
-            'MODULE_PAYMENT_MULTISAFEPAY_FCO_DISPLAY_CHECKOUT_ORDERS',
+            //'MODULE_PAYMENT_MULTISAFEPAY_FCO_DISPLAY_CHECKOUT_ORDERS',
             'MODULE_PAYMENT_MULTISAFEPAY_FCO_ZONE',
             'MODULE_PAYMENT_MULTISAFEPAY_FCO_SORT_ORDER',
             'MODULE_PAYMENT_MULTISAFEPAY_FCO_BTN_COLOR',
@@ -1935,7 +1898,7 @@ class multisafepay_fastcheckout {
             'MODULE_PAYMENT_MULTISAFEPAY_FCO_ORDER_STATUS_ID_EXPIRED'
         );
     }
-
+    
     /**
      * Return locale language code based on $lang provided
      * 

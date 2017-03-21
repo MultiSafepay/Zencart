@@ -36,7 +36,6 @@ if (!class_exists('multisafepay')) {
             $this->description = null;
             $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_STATUS == 'True';
             $this->sort_order = MODULE_PAYMENT_MULTISAFEPAY_SORT_ORDER;
-            $this->plugin_name = $this->plugin_ver;
             $this->order_status = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_INITIALIZED;
 
             if (is_object($order)) {
@@ -185,16 +184,6 @@ if (!class_exists('multisafepay')) {
             return false;
         }
 
-        function get_error()
-        {
-            $error = array(
-                'title' => MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR,
-                'error' => $this->_get_error_message($_GET['error'])
-            );
-
-            return $error;
-        }
-
         /**
          * 
          * @return type
@@ -229,8 +218,10 @@ if (!class_exists('multisafepay')) {
                 $trans_type = "direct";
             }
 
+            $sid = zen_session_name() . '=' . zen_session_id();
+
             if (MODULE_PAYMENT_MULTISAFEPAY_AUTO_REDIRECT == "True") {
-                $redirect_url = $this->_href_link('ext/modules/payment/multisafepay/success.php', '', 'NONSSL', false, false);
+                $redirect_url = $this->_href_link('ext/modules/payment/multisafepay/success.php?' . $sid, '', 'NONSSL', false, false);
             } else {
                 $redirect_url = null;
             }
@@ -355,12 +346,13 @@ if (!class_exists('multisafepay')) {
 
                 if ($gateway == 'BANKTRANS' && $trans_type == 'direct') {
                     zen_redirect(zen_href_link(FILENAME_CHECKOUT_SUCCESS, '', 'SSL'));
-                    //Or rather ?= zen_redirect(zen_href_link('index.php'));
+                    //Or rather ?= zen_redirect(zen_href_link('index'));
                 } else {
                     return $this->msp->orders->getPaymentLink();
                 }
             } catch (Exception $e) {
-                return htmlspecialchars($e->getMessage());
+                $this->_error_redirect(htmlspecialchars($e->getMessage()));
+                die();
             }
         }
 
@@ -440,7 +432,7 @@ if (!class_exists('multisafepay')) {
 
                 $response = $this->msp->orders->get('orders', $this->order_id);
 
-                return $response->status;
+                return $response;
             } catch (Exception $e) {
                 return htmlspecialchars($e->getMessage());
             }
@@ -461,27 +453,31 @@ if (!class_exists('multisafepay')) {
 
             include(DIR_WS_LANGUAGES . $_SESSION['language'] . "/checkout_process.php");
 
-            $this->msp = new MultiSafepayAPI\Client();
+            try {
+                $this->msp = new MultiSafepayAPI\Client();
 
-            if (MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live' || MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live account') {
-                $this->api_url = 'https://api.multisafepay.com/v1/json/';
-            } else {
-                $this->api_url = 'https://testapi.multisafepay.com/v1/json/';
+                if (MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live' || MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live account') {
+                    $this->api_url = 'https://api.multisafepay.com/v1/json/';
+                } else {
+                    $this->api_url = 'https://testapi.multisafepay.com/v1/json/';
+                }
+
+                $this->msp->setApiUrl($this->api_url);
+                $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
+
+                $response = $this->msp->orders->get('orders', $this->order_id);
+                $status = $response->status;
+                $pspid = $response->transaction_id;
+            } catch (Exception $e) {
+                echo htmlspecialchars($e->getMessage());
+                die();
             }
-
-            $this->msp->setApiUrl($this->api_url);
-            $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
-
-            $response = $this->msp->orders->get('orders', $this->order_id);
-            $status   = $response->status;
-            $pspid    = $response->transaction_id;
 
             $order->customer['firstname'] = $response->customer->first_name;
             $order->customer['lastname'] = $response->customer->last_name;
             $_SESSION['customer_id'] = $response->var1;
             $_SESSION['billto'] = $response->var2;
             $_SESSION['sendto'] = $response->var3;
-
             $reset_cart = false;
             $notify_customer = false;
 
@@ -506,7 +502,7 @@ if (!class_exists('multisafepay')) {
                         $GLOBALS['order']->info['order_status'] = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;
                         $reset_cart = true;
                         $notify_customer = true;
-                        $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;              
+                        $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;
                     } else {
                         $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;
                     }
@@ -515,6 +511,8 @@ if (!class_exists('multisafepay')) {
                 case "uncleared":
                     $GLOBALS['order']->info['order_status'] = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_UNCLEARED;
                     $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_UNCLEARED;
+                    $reset_cart = true;
+                    $notify_customer = true;
                     break;
                 case "reserved":
                     $GLOBALS['order']->info['order_status'] = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_RESERVED;
@@ -608,7 +606,7 @@ if (!class_exists('multisafepay')) {
 
 
             if ($old_order_status != $new_stat) {
-                $db->Execute("UPDATE " . TABLE_ORDERS . " SET orders_status = " . $new_stat . " WHERE orders_id = " . $this->order_id);         
+                $db->Execute("UPDATE " . TABLE_ORDERS . " SET orders_status = " . $new_stat . " WHERE orders_id = " . $this->order_id);
             }
 
             $order->products_ordered = '';
@@ -633,18 +631,17 @@ if (!class_exists('multisafepay')) {
             $last_osh_status_r = $db->Execute("SELECT orders_status_id FROM " . TABLE_ORDERS_STATUS_HISTORY . " WHERE orders_id = '" . $this->order_id . "' ORDER BY date_added DESC limit 1");
 
             if (($last_osh_status_r->fields['orders_status_id'] != $GLOBALS['order']->info['order_status']) && (!empty($GLOBALS['order']->info['order_status']) )) {
-                
-                if(!is_null($pspid))
-                {
-                    $comment    =   'MultiSafepay ID: ' . $pspid;
-                }                
-                
+
+                if (!is_null($pspid)) {
+                    $comment = 'MultiSafepay ID: ' . $pspid;
+                }
+
                 $sql_data_array = array(
-                    'orders_id'         => $this->order_id,
-                    'orders_status_id'  => $GLOBALS['order']->info['order_status'],
-                    'date_added'        =>  'now()',
-                    'customer_notified' =>  0,
-                    'comments'          =>  $comment
+                    'orders_id' => $this->order_id,
+                    'orders_status_id' => $GLOBALS['order']->info['order_status'],
+                    'date_added' => 'now()',
+                    'customer_notified' => 1,
+                    'comments' => $comment
                 );
 
                 zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
@@ -662,33 +659,14 @@ if (!class_exists('multisafepay')) {
 
         /**
          * 
-         * @param type $code
-         * @return type
+         * @param type $error
          */
-        function _get_error_message($code)
-        {
-            if (is_numeric($code)) {
-                $message = constant(sprintf("MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_%04d", $code));
-
-                if (!$message) {
-                    $message = MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_UNKNOWN;
-                }
-            } else {
-                $const = sprintf("MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_%s", strtoupper($code));
-                if (defined($const)) {
-                    $message = constant($const);
-                } else {
-                    $message = $code;
-                }
-            }
-            return $message;
-        }
-
         function _error_redirect($error)
         {
-            zen_redirect($this->_href_link(
-                            FILENAME_CHECKOUT_PAYMENT, 'payment_error=' . $this->code . '&error=' . $error, 'NONSSL', true, false, false
-            ));
+            global $messageStack;
+
+            $messageStack->add_session('checkout_payment', $error, 'error');
+            zen_redirect('index.php?main_page=' . FILENAME_CHECKOUT_PAYMENT);
         }
 
         /**
@@ -703,7 +681,6 @@ if (!class_exists('multisafepay')) {
          * @global type $db
          * @return type
          */
-        
         function _save_order()
         {
             global $customers_id;
@@ -726,11 +703,10 @@ if (!class_exists('multisafepay')) {
 
             $customer_id = $_SESSION['customer_id'];
 
-            $data   =   "customer";
-            
-            if(is_null($order->customer['firstname']) || $order->customer['firstname'] === " ")
-            {
-                $data   =   "billing";
+            $data = "customer";
+
+            if (is_null($order->customer['firstname']) || $order->customer['firstname'] === " ") {
+                $data = "billing";
             }
 
             $sql_data_array = array(
@@ -803,7 +779,7 @@ if (!class_exists('multisafepay')) {
                 'date_added' => 'now()',
                 'customer_notified' => '0',
                 'comments' => $order->info['comments']);
-            
+
             zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
 
             for ($i = 0, $n = sizeof($order->products); $i < $n; $i++)
@@ -983,7 +959,6 @@ if (!class_exists('multisafepay')) {
          * @param type $eoln
          * @return string
          */
-        
         function _address_format($address_format_id, $address, $html, $boln, $eoln)
         {
             $address_format_query = $db->Execute("SELECT address_format AS format FROM " . TABLE_ADDRESS_FORMAT . " WHERE address_format_id = '" . (int) $address_format_id . "'");
@@ -1064,7 +1039,6 @@ if (!class_exists('multisafepay')) {
          * @param type $protected
          * @return type
          */
-        
         function _output_string($string, $translate = false, $protected = false)
         {
             if ($protected == true) {
@@ -1083,7 +1057,6 @@ if (!class_exists('multisafepay')) {
          * @param type $string
          * @return type
          */
-        
         function _output_string_protected($string)
         {
             return $this->_output_string($string, false, true);
@@ -1095,7 +1068,6 @@ if (!class_exists('multisafepay')) {
          * @param type $parse
          * @return type
          */
-        
         function _parse_input_field_data($data, $parse)
         {
             return strtr(trim($data), $parse);
@@ -1114,7 +1086,6 @@ if (!class_exists('multisafepay')) {
          * @param type $escape_html
          * @return string
          */
-        
         function _href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $unused = true, $escape_html = true)
         {
             global $request_type, $session_started, $SID;
@@ -1151,11 +1122,9 @@ if (!class_exists('multisafepay')) {
                 $separator = '?';
             }
 
-            while ((substr($link, -1) == '&') || (substr($link, -1) == '?'))
+            while ((substr($link, -1) == '&') || (substr($link, -1) == '?')) {
                 $link = substr($link, 0, -1);
-
-
-
+            }
 
             // Add the session ID when moving from different HTTP and HTTPS servers, or when SID is defined
             if (($add_session_id == true) && ($session_started == true) && (SESSION_FORCE_COOKIE_USE == 'False')) {
@@ -1282,6 +1251,11 @@ if (!class_exists('multisafepay')) {
              */
         }
 
+        /**
+         * 
+         * @param type $admin
+         * @return type
+         */
         function getTitle($admin = 'title')
         {
 
@@ -1291,7 +1265,6 @@ if (!class_exists('multisafepay')) {
             } else {
                 $title = "";
             }
-
 
             $title .= ($this->checkView() == "admin") ? "MultiSafepay - " : "";
             if ($admin && $this->checkView() == "admin") {
@@ -1407,10 +1380,13 @@ if (!class_exists('multisafepay')) {
             }
         }
 
+        /**
+         * 
+         * @return string
+         */
         function checkView()
         {
             $view = "admin";
-
 
             if (!IS_ADMIN_FLAG) {
                 if ($this->getScriptName() == FILENAME_CHECKOUT_PAYMENT) {
@@ -1471,6 +1447,12 @@ if (!class_exists('multisafepay')) {
             return "en";
         }
 
+        /**
+         * Return locale language code based on $lang provided
+         * 
+         * @param type $lang
+         * @return string
+         */
         function getlocale($lang)
         {
             switch ($lang)
@@ -1484,16 +1466,23 @@ if (!class_exists('multisafepay')) {
                 case "french":
                     $lang = 'fr_FR';
                     break;
+                case "italian":
+                    $lang = 'it_IT';
+                    break;
+                case "portuguese":
+                    $lang = 'pt_PT';
+                    break;
                 case "german":
                     $lang = 'de_DE';
                     break;
                 case "english":
-                    $lang = 'en_EN';
+                    $lang = 'en_GB';
                     break;
                 default:
-                    $lang = 'en_EN';
+                    $lang = 'en_GB';
                     break;
             }
+
             return $lang;
         }
 

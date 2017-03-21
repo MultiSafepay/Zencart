@@ -10,7 +10,7 @@ class multisafepay_payafter {
     var $description;
     var $enabled;
     var $sort_order;
-    var $plugin_name;
+    var $plugin_ver = "ZenCart 3.0.0";
     var $icon = "payafter.png";
     var $api_url;
     var $order_id;
@@ -30,10 +30,9 @@ class multisafepay_payafter {
 
         $this->code = 'multisafepay_payafter';
         $this->title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_TITLE);
-        $this->description = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_TITLE);
+        $this->description = null;
         $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SORT_ORDER;
-        $this->plugin_name = 'ZenCart 3.0.0';
         $this->order_status = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_INITIALIZED;
 
         if (is_object($order)) {
@@ -69,16 +68,20 @@ class multisafepay_payafter {
      */
     function getTitle($admin = 'title')
     {
-        $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
 
-        $title .= ($this->checkView() == "admin") ? "MultiSafepay " : "";
+        if (MODULE_PAYMENT_MULTISAFEPAY_TITLES_ICON_DISABLED != 'False') {
+
+            $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
+        } else {
+            $title = "";
+        }
+
+        $title .= ($this->checkView() == "admin") ? "MultiSafepay - " : "";
         if ($admin && $this->checkView() == "admin") {
             $title .= $admin;
         } else {
-
             $title .= $this->getLangStr($admin);
         }
-
         return $title;
     }
 
@@ -89,8 +92,7 @@ class multisafepay_payafter {
      */
     function getLangStr($str)
     {
-        $holder = $str;
-        return $holder;
+        return $str;
     }
 
     /**
@@ -121,12 +123,11 @@ class multisafepay_payafter {
      */
     function getIcon()
     {
-        $icon = DIR_WS_IMAGES . "multisafepay/en/" . $this->icon;
-
         if (file_exists(DIR_WS_IMAGES . "multisafepay/" . strtolower($this->getUserLanguage("DETECT")) . "/" . $this->icon)) {
             $icon = DIR_WS_IMAGES . "multisafepay/" . strtolower($this->getUserLanguage("DETECT")) . "/" . $this->icon;
-            return $icon;
         }
+
+        return $icon;
     }
 
     /**
@@ -172,242 +173,11 @@ class multisafepay_payafter {
         return $view;
     }
 
-    // This is a copy from process.php	
-    // This is a copy from process.php	
-    function get_shipping_methods($weight)
-    {
-        global $shipping_weight, $shipping_num_boxes, $db, $total_count;
-
-
-
-
-        //require_once("includes/application_top.php");
-        if (!empty($GLOBALS['_SESSION']['language'])) {
-            require_once('includes/languages/' . $GLOBALS['_SESSION']['language'] . '/modules/payment/multisafepay_fastcheckout.php');
-        }
-        //require_once(DIR_WS_CLASSES . 'order.php');
-        //require_once(DIR_WS_CLASSES . 'shipping.php');
-
-        $total_weight = $weight;
-        $total_count = 1;
-
-        // from shipping.php:
-        $shipping_num_boxes = 1;
-        $shipping_weight = $total_weight;
-
-        if (SHIPPING_BOX_WEIGHT >= $shipping_weight * SHIPPING_BOX_PADDING / 100) {
-            $shipping_weight = $shipping_weight + SHIPPING_BOX_WEIGHT;
-        } else {
-            $shipping_weight = $shipping_weight + ($shipping_weight * SHIPPING_BOX_PADDING / 100);
-        }
-
-        if ($shipping_weight > SHIPPING_MAX_WEIGHT) { // Split into many boxes
-            $shipping_num_boxes = ceil($shipping_weight / SHIPPING_MAX_WEIGHT);
-            $shipping_weight = $shipping_weight / $shipping_num_boxes;
-        }
-
-
-        $tax_class = array();
-        $shipping_arr = array();
-        $tax_class_unique = array();
-
-        /*
-         * Load shipping modules
-         */
-        $module_directory = dirname(dirname(__FILE__)) . '/' . 'shipping/';
-        if (!file_exists($module_directory)) {
-            echo 'Error: ' . $module_directory;
-        }
-
-        // find module files
-        $file_extension = substr(__FILE__, strrpos(__FILE__, '.'));
-        $directory_array = array();
-        if ($dir = @ dir($module_directory)) {
-            while ($file = $dir->read()) {
-                if (!is_dir($module_directory . $file)) {
-                    if (substr($file, strrpos($file, '.')) == $file_extension) {
-                        $directory_array[] = $file;
-                    }
-                }
-            }
-            sort($directory_array);
-            $dir->close();
-        }
-
-        $check_query = $db->Execute("select countries_iso_code_2
-                             from " . TABLE_COUNTRIES . "
-                             where countries_id =
-                             '" . SHIPPING_ORIGIN_COUNTRY . "'");
-
-
-        $shipping_origin_iso_code_2 = $check_query->fields['countries_iso_code_2'];
-
-        // load modules
-        $module_info = array();
-        $module_info_enabled = array();
-        $shipping_modules = array();
-        for ($i = 0, $n = sizeof($directory_array); $i < $n; $i++)
-        {
-            $file = $directory_array[$i];
-            global $language;
-            include_once (DIR_FS_CATALOG . DIR_WS_LANGUAGES . $_SESSION['language'] . '/modules/shipping/' . $file);
-            include_once ($module_directory . $file);
-
-            $class = substr($file, 0, strrpos($file, '.'));
-            $module = new $class;
-            $curr_ship = strtoupper($module->code);
-
-            switch ($curr_ship)
-            {
-                case 'FEDEXGROUND':
-                    $curr_ship = 'FEDEX_GROUND';
-                    break;
-                case 'FEDEXEXPRESS':
-                    $curr_ship = 'FEDEX_EXPRESS';
-                    break;
-                case 'UPSXML':
-                    $curr_ship = 'UPSXML_RATES';
-                    break;
-                case 'DHLAIRBORNE':
-                    $curr_ship = 'AIRBORNE';
-                    break;
-                default:
-                    break;
-            }
-
-
-            if (@constant('MODULE_SHIPPING_' . $curr_ship . '_STATUS') == 'True') {
-                $module_info_enabled[$module->code] = array('enabled' => true);
-            }
-            if ($module->check() == true) {
-                $module_info[$module->code] = array(
-                    'code' => $module->code,
-                    'title' => $module->title,
-                    'description' => $module->description,
-                    'status' => $module->check());
-            }
-
-            if (!empty($module_info_enabled[$module->code]['enabled'])) {
-                $shipping_modules[$module->code] = $module;
-            }
-        }
-
-        /*
-         * Get shipping prices
-         */
-        $shipping_methods = array();
-
-
-        foreach ($module_info as $key => $value)
-        {
-            // check if active
-            $module_name = $module_info[$key]['code'];
-            if (!$module_info_enabled[$module_name]) {
-                continue;
-            }
-
-            $curr_ship = strtoupper($module_name);
-
-            // calculate price
-            $module = $shipping_modules[$module_name];
-            $quote = $module->quote($method);
-
-            $price = $quote['methods'][0]['cost'];
-
-            global $currencies;
-            $shipping_price = $currencies->get_value(DEFAULT_CURRENCY) * ($price >= 0 ? $price : 0);
-
-            // need this?
-            $common_string = "MODULE_SHIPPING_" . $curr_ship . "_";
-            @$zone = constant($common_string . "ZONE");
-            @$enable = constant($common_string . "STATUS");
-            @$curr_tax_class = constant($common_string . "TAX_CLASS");
-            @$price = constant($common_string . "COST");
-            @$handling = constant($common_string . "HANDLING");
-            @$table_mode = constant($common_string . "MODE");
-
-            // allowed countries - zones	
-            if ($zone != '') {
-                $zone_result = $db->Execute("select countries_name, coalesce(zone_code, 'All Areas') zone_code, countries_iso_code_2
-                                     from " . TABLE_GEO_ZONES . " as gz " .
-                        " inner join " . TABLE_ZONES_TO_GEO_ZONES . " as ztgz on gz.geo_zone_id = ztgz.geo_zone_id " .
-                        " inner join " . TABLE_COUNTRIES . " as c on ztgz.zone_country_id = c.countries_id " .
-                        " left join " . TABLE_ZONES . " as z on ztgz.zone_id=z.zone_id
-                                     where gz.geo_zone_id= '" . $zone . "'");
-                // i get all the alowed shipping zones
-                while (!$zone_result->EOF) {
-                    $allowed_restriction_state[] = $zone_result->fields['zone_code'];
-                    $allowed_restriction_country[] = array($zone_result->fields['countries_name'],
-                        $zone_result->fields['countries_iso_code_2']);
-                    $zone_result->MoveNext();
-                }
-            }
-
-            if ($curr_tax_class != 0 && $curr_tax_class != '') {
-                $tax_class[] = $curr_tax_class;
-
-                if (!in_array($curr_tax_class, $tax_class_unique))
-                    $tax_class_unique[] = $curr_tax_class;
-            }
-
-
-            if (empty($quote['error']) && $quote['id'] != 'zones') {
-                foreach ($quote['methods'] as $method)
-                {
-                    $shipping_methods[] = array(
-                        'id' => $quote['id'],
-                        'module' => $quote['module'],
-                        'title' => $quote['methods'][0]['title'],
-                        'price' => $shipping_price,
-                        'allowed' => $allowed_restriction_country,
-                        'tax_class' => $curr_tax_class,
-                        'zone' => $zone,
-                    );
-                }
-            } elseif ($quote['id'] == 'zones') {
-                for ($cur_zone = 1; $cur_zone <= $module->num_zones; $cur_zone++)
-                {
-                    $countries_table = constant('MODULE_SHIPPING_ZONES_COUNTRIES_' . $cur_zone);
-                    $country_zones = split("[,]", $countries_table);
-
-                    if (count($country_zones) > 1 || !empty($country_zones[0])) {
-                        $shipping = -1;
-                        $zones_cost = constant('MODULE_SHIPPING_ZONES_COST_' . $cur_zone);
-
-                        $zones_table = split("[:,]", $zones_cost);
-                        $size = sizeof($zones_table);
-                        for ($i = 0; $i < $size; $i+=2)
-                        {
-                            if ($shipping_weight <= $zones_table[$i]) {
-                                $shipping = $zones_table[$i + 1];
-                                $shipping_method = $shipping_weight . ' ' . MODULE_SHIPPING_ZONES_TEXT_UNITS;
-                                break;
-                            }
-                        }
-
-                        if ($shipping == -1) {
-                            $shipping_cost = 0;
-                            $shipping_method = MODULE_SHIPPING_ZONES_UNDEFINED_RATE;
-                        } else {
-                            $shipping_cost = ($shipping * $shipping_num_boxes) + constant('MODULE_SHIPPING_ZONES_HANDLING_' . $cur_zone);
-
-                            $shipping_methods[] = array(
-                                'id' => $quote['id'],
-                                'module' => $quote['module'],
-                                'title' => $shipping_method,
-                                'price' => $shipping_cost,
-                                'allowed' => $country_zones,
-                            );
-                        }
-                    }
-                }
-            }
-        }
-        return $shipping_methods;
-    }
-
-    /*
+    /**
      * Check whether this payment module is available
+     * 
+     * @global type $order
+     * @global type $db
      */
 
     function update_status()
@@ -510,7 +280,8 @@ class multisafepay_payafter {
     function create_payafterinput()
     {
 
-        $output = '<div class="idealbox" style="padding:20px;border:1px solid #d50172; margin-top:20px;text-align:center">';
+        $output = '<div class="padbox" style="padding:20px;border:1px solid #d50172; margin-top:20px;text-align:center">';
+        $output .= '<img src="images/multisafepay/en/payafter-big.png" border="0" width="175" /><br /><br />';        
         $output .= '<label>Bankaccount: </label><input type="text" name="pad_bankaccount"style="width:200px; padding: 0px; margin-left: 7px;"><br/>';
         $output .= '<label>Birthday: </label><input type="text" name="pad_birthday" placeholder="DD-MM-YYYY" style="width:200px; padding: 0px; margin-left: 35px;">';
         $output .= '<div style="clear:both;"></div></div><br/>';
@@ -526,7 +297,6 @@ class multisafepay_payafter {
     function before_process()
     {
         $this->_save_order();
-
         zen_redirect($this->_start_payafter());
     }
 
@@ -547,93 +317,6 @@ class multisafepay_payafter {
     function output_error()
     {
         return false;
-    }
-
-    /**
-     * 
-     * @return type
-     */
-    function get_error()
-    {
-        $error = array(
-            'title' => MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_ERROR,
-            'error' => $this->_get_error_message($_GET['error'])
-        );
-
-        return $error;
-    }
-
-    // ---- MultiSafepay ----
-    function isNewAddressQuery()
-    {
-        // Check for mandatory parameters
-        $country = $_GET['country'];
-        $countryCode = $_GET['countrycode'];
-        $transactionId = $_GET['transactionid'];
-
-        if (empty($country) || empty($countryCode) || empty($transactionId))
-            return false;
-        else
-            return true;
-    }
-
-    // Handles new shipping costs request
-    function handleShippingMethodsNotification()
-    {
-        $country = $_GET['country'];
-        $countryCode = $_GET['countrycode'];
-        $transactionId = $_GET['transactionid'];
-        $weight = $_GET['weight'];
-        $size = $_GET['size'];
-
-        header("Content-Type:text/xml");
-        print($this->getShippingMethodsFilteredXML($country, $countryCode, $weight, $size, $transactionId));
-    }
-
-    // Returns XML with new shipping costs
-    function getShippingMethodsFilteredXML($country, $countryCode, $weight, $size, $transactionId)
-    {
-        $outxml = '<shipping-info>';
-        $methods = $this->getShippingMethodsFiltered($country, $countryCode, $weight, $size, $transactionId);
-
-        foreach ($methods as $method)
-        {
-            $outxml .= '<shipping>';
-            $outxml .= '<shipping-name>';
-            $outxml .= $method['name'];
-            $outxml .= '</shipping-name>';
-            $outxml .= '<shipping-cost currency="' . $method['currency'] . '">';
-            $outxml .= $method['cost'];
-            $outxml .= '</shipping-cost>';
-            $outxml .= '</shipping>';
-        }
-
-        $outxml .= '</shipping-info>';
-        return $outxml;
-    }
-
-    // Get shipping methods for given parameters
-    // Result as an array:
-    // 'name' => 'test-name'
-    // 'cost' => '123'
-    // 'currency' => 'EUR' (currently only this supported)
-
-    function getShippingMethodsFiltered($country, $countryCode, $weight, $size, $transactionId)
-    {
-        $out = array();
-        $shipping_methods = $this->get_shipping_methods($weight);
-
-        foreach ($shipping_methods as $shipping_method)
-        {
-            // ISO codes match - add to output list
-            $shipping = array();
-            $shipping['name'] = $shipping_method['module'] . ' - ' . $shipping_method['title'];
-            $shipping['cost'] = $shipping_method['price'];
-            $shipping['currency'] = $GLOBALS['order']->info['currency']; // Currently Euro is supported
-            $out[] = $shipping;
-        }
-
-        return $out;
     }
 
     /**
@@ -689,7 +372,7 @@ class multisafepay_payafter {
             $msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_KEY);
 
             list($cust_street, $cust_housenumber) = $this->parseAddress($GLOBALS['order']->customer['street_address']);
-            list($del_street, $del_housenumber) = $this->parseAddress($GLOBALS['order']->customer['street_address']);
+            list($del_street, $del_housenumber) = $this->parseAddress($GLOBALS['order']->delivery['street_address']);
 
             $msp->orders->post(array(
                 "type" => $trans_type,
@@ -757,16 +440,26 @@ class multisafepay_payafter {
                 "plugin" => array(
                     "shop" => PROJECT_VERSION_NAME,
                     "shop_version" => PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR,
-                    "plugin_version" => 'ZenCart 3.0.0',
+                    "plugin_version" => $this->plugin_ver,
                     "partner" => 'MultiSafepay',
                     "shop_root_url" => $_SERVER['SERVER_NAME']
                 )
             ));
-
-            return $msp->orders->getPaymentLink();
+            if ($trans_type == 'direct') {
+                $payment_url = $msp->orders->getPaymentLink() . "&transactionid=" . $this->order_id;
+                return $payment_url;
+            } else {
+                return $msp->orders->getPaymentLink();
+            }
         } catch (Exception $e) {
-            echo '(MultiSafepay) ' . htmlspecialchars($e->getMessage());
-            exit;
+            if($this->getErrorcode($e->getMessage()) == "1024")
+            {
+                $this->_error_redirect(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_ERROR_1024);
+                die();                
+            } else {
+                $this->_error_redirect(htmlspecialchars($e->getMessage()));
+                die();
+            }
         }
     }
 
@@ -1004,32 +697,56 @@ class multisafepay_payafter {
         return $size - $pos - strlen($needle);
     }
 
+    /**
+     * 
+     * @param type $error
+     * @return type
+     */
+    
+    public function getErrorcode($error)
+    {        
+        return substr($error, 0, 4);
+    }
+    
+    /**
+     * 
+     * @global type $db
+     * @global type $order
+     * @global type $currencies
+     * @param type $manual_status
+     * @return type
+     */
     function checkout_notify($manual_status = '')
     {
         global $db, $order, $currencies;
-        $this->msp = new MultiSafepayAPI();
-        $this->msp->plugin_name = $this->plugin_name;
-        $this->msp->test = (MODULE_PAYMENT_MULTISAFEPAY_API_SERVER != 'Live' && MODULE_PAYMENT_MULTISAFEPAY_API_SERVER != 'Live account');
-        $this->msp->merchant['account_id'] = MODULE_PAYMENT_MULTISAFEPAY_ACCOUNT_ID;
-        $this->msp->merchant['site_id'] = MODULE_PAYMENT_MULTISAFEPAY_SITE_ID;
-        $this->msp->merchant['site_code'] = MODULE_PAYMENT_MULTISAFEPAY_SITE_SECURE_CODE;
-        $this->msp->transaction['id'] = $this->order_id;
-        $status = $this->msp->getStatus();
-
-
-        $order->customer['firstname'] = $this->msp->details['customer']['firstname'];
-        $order->customer['lastname'] = $this->msp->details['customer']['lastname'];
-        $_SESSION['customer_id'] = $this->msp->details['transaction']['var1'];
-        $_SESSION['billto'] = $this->msp->details['transaction']['var2'];
-        $_SESSION['sendto'] = $this->msp->details['transaction']['var3'];
 
         include(DIR_WS_LANGUAGES . $_SESSION['language'] . "/checkout_process.php");
 
-        if ($this->msp->error) {
-            return $this->msp->error_code;
+        try {
+            $this->msp = new MultiSafepayAPI\Client();
+
+            if (MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER == 'Live' || MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_SERVER == 'Live account') {
+                $this->api_url = 'https://api.multisafepay.com/v1/json/';
+            } else {
+                $this->api_url = 'https://testapi.multisafepay.com/v1/json/';
+            }
+
+            $this->msp->setApiUrl($this->api_url);
+            $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_API_KEY);
+
+            $response = $this->msp->orders->get('orders', $this->order_id);
+            $status = $response->status;
+            $pspid = $response->transaction_id;
+        } catch (Exception $e) {
+            echo htmlspecialchars($e->getMessage());
+            die();
         }
 
-        // determine status
+        $order->customer['firstname'] = $response->customer->first_name;
+        $order->customer['lastname'] = $response->customer->last_name;
+        $_SESSION['customer_id'] = $response->var1;
+        $_SESSION['billto'] = $response->var2;
+        $_SESSION['sendto'] = $response->var3;
         $reset_cart = false;
         $notify_customer = false;
 
@@ -1039,10 +756,9 @@ class multisafepay_payafter {
             $status = $manual_status;
         }
 
-
-
         $old_order_status = $current_order->fields['orders_status'];
 
+        $new_stat = DEFAULT_ORDERS_STATUS_ID;
         switch ($status)
         {
             case "initialized":
@@ -1051,7 +767,6 @@ class multisafepay_payafter {
                 $reset_cart = true;
                 break;
             case "completed":
-
                 if (in_array($old_order_status, array(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_INITIALIZED, DEFAULT_ORDERS_STATUS_ID, 0, MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_UNCLEARED))) {
                     $GLOBALS['order']->info['order_status'] = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_COMPLETED;
                     $reset_cart = true;
@@ -1060,7 +775,6 @@ class multisafepay_payafter {
                 } else {
                     $new_stat = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_COMPLETED;
                 }
-
 
                 break;
             case "uncleared":
@@ -1156,28 +870,20 @@ class multisafepay_payafter {
 
         $GLOBALS['order']->info['orders_status'] = $order_status->fields['orders_status_name'];
 
-
-
         if ($old_order_status != $new_stat) {
-            // update order
             $db->Execute("UPDATE " . TABLE_ORDERS . " SET orders_status = " . $new_stat . " WHERE orders_id = " . $this->order_id);
         }
-
-
 
         $order->products_ordered = '';
 
         foreach ($order->products as $product)
         {
-
-
             $order->products_ordered .= $product['qty'] . ' x ' . $product['name'] . ($product['model'] != '' ? ' (' . $product['model'] . ') ' : '') . ' = ' .
                     $currencies->display_price($product['final_price'], $product['tax'], $product['qty']) .
                     ($product['onetime_charges'] != 0 ? "\n" . TEXT_ONETIME_CHARGES_EMAIL . $currencies->display_price($product['onetime_charges'], $product['tax'], 1) : '') .
                     $order->products_ordered_attributes . "\n";
             $i++;
         }
-
 
         if ($notify_customer) {
             $order->send_order_email($this->order_id, 2);
@@ -1186,139 +892,39 @@ class multisafepay_payafter {
             unset($_SESSION['sendto']);
         }
 
-
         // if we don't inform the customer about the update, check if there's a new status. If so, update the order_status_history table accordingly
         $last_osh_status_r = $db->Execute("SELECT orders_status_id FROM " . TABLE_ORDERS_STATUS_HISTORY . " WHERE orders_id = '" . $this->order_id . "' ORDER BY date_added DESC limit 1");
 
+        if (!is_null($pspid)) {
+            $comment = 'MultiSafepay ID: ' . $pspid;
+        }
 
-        if (($last_osh_status_r->fields['orders_status_id'] != $GLOBALS['order']->info['order_status'])) {
+        if (($last_osh_status_r->fields['orders_status_id'] != $GLOBALS['order']->info['order_status']) && (!empty($GLOBALS['order']->info['order_status']) )) {
             $sql_data_array = array('orders_id' => $this->order_id,
                 'orders_status_id' => $GLOBALS['order']->info['order_status'],
                 'date_added' => 'now()',
-                'customer_notified' => 0,
+                'customer_notified' => 1,
+                'comments' => $comment
             );
 
             zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
         }
 
-
         // reset cart
         if ($reset_cart) {
             $db->Execute("DELETE FROM " . TABLE_CUSTOMERS_BASKET . " WHERE customers_id = '" . (int) $GLOBALS['order']->customer['id'] . "'");
-
             $db->Execute("DELETE FROM " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . " WHERE customers_id = '" . (int) $GLOBALS['order']->customer['id'] . "'");
         }
 
         return $status;
     }
 
-    function get_customer($details)
-    {
-        global $db;
-        $email = $details['customer']['email'];
-        //    Check if the email exists
-        $customer_exists = $db->Execute("select customers_id from " .
-                TABLE_CUSTOMERS . " where customers_email_address = '" . $email . "'");
-
-
-
-        $new_user = false;
-        if ($customer_exists->fields['customers_id'] != '') {
-            $customer_id = $customer_exists->fields['customers_id'];
-            //zen_session_register('customer_id');
-        } else {
-            $sql_data_array = array(
-                'customers_firstname' => $details['customer']['firstname'],
-                'customers_lastname' => $details['customer']['lastname'],
-                'customers_email_address' => $details['customer']['email'],
-                'customers_telephone' => $details['customer']['phone1'],
-                'customers_fax' => '',
-                'customers_default_address_id' => 0,
-                'customers_password' => zen_encrypt_password('test123'),
-                'customers_newsletter' => 1
-            );
-
-            if (ACCOUNT_DOB == 'true') {
-                $sql_data_array['customers_dob'] = 'now()';
-            }
-            zen_db_perform(TABLE_CUSTOMERS, $sql_data_array);
-            $customer_id = $db->Insert_ID();
-            //zen_session_register('customer_id');
-            $db->Execute("insert into " . TABLE_CUSTOMERS_INFO . "
-                                    (customers_info_id, customers_info_number_of_logons,
-                                     customers_info_date_account_created)
-                               values ('" . (int) $customer_id . "', '0', now())");
-
-            $new_user = true;
-        }
-
-
-        //      The user exists and is logged in
-        //      Check database to see if the address exist.
-        $address_book = $db->Execute("select address_book_id, entry_country_id, entry_zone_id from " . TABLE_ADDRESS_BOOK . "
-										where  customers_id = '" . $customer_id . "'
-										and entry_street_address = '" . $details['customer']['address1'] . ' ' . $details['customer']['housenumber'] . "'
-										and entry_suburb = '" . '' . "'
-										and entry_postcode = '" . $details['customer']['zipcode'] . "'
-										and entry_city = '" . $details['customer']['city'] . "'
-									");
-
-
-
-        //      If not, add the addr as default one
-        if (!$address_book->RecordCount()) {
-
-            $country = $this->get_country_from_code($details['customer']['country']);
-
-
-            $sql_data_array = array(
-                'customers_id' => $customer_id,
-                'entry_gender' => '',
-                'entry_company' => '',
-                'entry_firstname' => $details['customer']['firstname'],
-                'entry_lastname' => $details['customer']['lastname'],
-                'entry_street_address' => $details['customer']['address1'] . ' ' . $details['customer']['housenumber'],
-                'entry_suburb' => '',
-                'entry_postcode' => $details['customer']['zipcode'],
-                'entry_city' => $details['customer']['city'],
-                'entry_state' => '',
-                'entry_country_id' => $country->fields['countries_id'],
-                'entry_zone_id' => ''
-            );
-
-
-            zen_db_perform(TABLE_ADDRESS_BOOK, $sql_data_array);
-
-
-            $address_id = $db->Insert_ID();
-
-
-
-
-            $db->Execute("update " . TABLE_CUSTOMERS . "
-                                set customers_default_address_id = '" . (int) $address_id . "'
-                                where customers_id = '" . (int) $customer_id . "'");
-            $customer_default_address_id = $address_id;
-            $customer_country_id = $country['countries_id'];
-            //$customer_zone_id = $zone_answer['zone_id'];
-        } else {
-
-
-            $customer_default_address_id = $address_book->fields['address_book_id'];
-            $customer_country_id = $address_book->fields['entry_country_id'];
-            $customer_zone_id = $address_book->fields['entry_zone_id'];
-        }
-
-        $customer_first_name = $details['customer']['firstname'];
-        //zen_session_register('customer_default_address_id');
-        //zen_session_register('customer_country_id');
-        //zen_session_register('customer_zone_id');
-        //zen_session_register('customer_first_name');
-
-        return $customer_id;
-        //  Customer exists, is logged and address book is up to date
-    }
-
+    /**
+     * 
+     * @global type $db
+     * @param type $code
+     * @return type
+     */
     function get_country_from_code($code)
     {
         global $db;
@@ -1329,42 +935,39 @@ class multisafepay_payafter {
         return $country;
     }
 
+    /**
+     * 
+     * @param type $order_id
+     * @param type $customer_id
+     * @return type
+     */
     function get_hash($order_id, $customer_id)
     {
         return md5($order_id . $customer_id);
     }
 
-    function _get_error_message($code)
-    {
-        if (is_numeric($code)) {
-            $message = constant(sprintf("MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_ERROR_%04d", $code));
-
-            if (!$message) {
-                $message = MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_ERROR_UNKNOWN;
-            }
-        } else {
-            $const = sprintf("MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_ERROR_%s", strtoupper($code));
-
-            if (defined($const)) {
-                $message = constant($const);
-            } else {
-                $message = $code;
-            }
-        }
-        return $message;
-    }
-
+    /**
+     * 
+     * @param type $error
+     */
     function _error_redirect($error)
     {
-        zen_redirect($this->_href_link(
-                        FILENAME_SHOPPING_CART, 'payment_error=' . $this->code . '&error=' . $error, 'NONSSL', true, false, false
-        ));
+        global $messageStack;
+
+        $messageStack->add_session('checkout_payment', $error, 'error');
+        zen_redirect('index.php?main_page=' . FILENAME_CHECKOUT_PAYMENT);
     }
 
-    // ---- Ripped from checkout_process.php ----
-
-    /*
+    /**
      * Store the order in the database, and set $this->order_id
+     * 
+     * @global type $customer_id
+     * @global type $languages_id
+     * @global type $order
+     * @global type $order_totals
+     * @global type $order_products_id
+     * @global type $db
+     * @return type
      */
     function _save_order()
     {
@@ -1383,10 +986,6 @@ class multisafepay_payafter {
 
         if (!empty($this->order_id) && $this->order_id > 0) {
             return;
-        }
-
-        if (MODULE_PAYMENT_MULTISAFEPAY_FCO_DISPLAY_CHECKOUT_ORDERS == 'False') {
-            $order->info['order_status'] = 0;
         }
 
         $sql_data_array = array('customers_id' => $customer_id,
@@ -1419,7 +1018,7 @@ class multisafepay_payafter {
             'billing_state' => $order->billing['state'],
             'billing_country' => $order->billing['country']['title'],
             'billing_address_format_id' => $order->billing['format_id'],
-            'payment_method' => 'MultiSafepay Betaal na Ontvangst',
+            'payment_method' => 'Pay After Delivery',
             'payment_module_code' => $order->info['payment_module_code'],
             'coupon_code' => $order->info['coupon_code'],
             'cc_type' => $order->info['cc_type'],
@@ -1430,7 +1029,6 @@ class multisafepay_payafter {
             'orders_status' => $order->info['order_status'],
             'shipping_module_code' => $order->info['shipping_module_code'],
             'shipping_method' => $order->info['shipping_method'],
-            //'orders_status' 					=> 	MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_INITIALIZED,
             'currency' => $GLOBALS['order']->info['currency'],
             'currency_value' => $order->info['currency_value'],
             'order_total' => $order->info['total'],
@@ -1466,12 +1064,12 @@ class multisafepay_payafter {
             if (STOCK_LIMITED == 'true') {
                 if (DOWNLOAD_ENABLED == 'true') {
                     $stock_query_raw = "SELECT products_quantity, pad.products_attributes_filename
-											FROM " . TABLE_PRODUCTS . " p
-											LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES . " pa
-											 ON p.products_id=pa.products_id
-											LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES_DOWNLOAD . " pad
-											 ON pa.products_attributes_id=pad.products_attributes_id
-											WHERE p.products_id = '" . zen_get_prid($order->products[$i]['id']) . "'";
+                                        FROM " . TABLE_PRODUCTS . " p
+                                        LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES . " pa
+                                         ON p.products_id=pa.products_id
+                                        LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES_DOWNLOAD . " pad
+                                         ON pa.products_attributes_id=pad.products_attributes_id
+                                        WHERE p.products_id = '" . zen_get_prid($order->products[$i]['id']) . "'";
                     // Will work with only one option for downloadable products
                     // otherwise, we have to build the query dynamically with a loop
                     $products_attributes = $order->products[$i]['attributes'];
@@ -1500,8 +1098,6 @@ class multisafepay_payafter {
             // Update products_ordered (for bestsellers list)
             $db->Execute("update " . TABLE_PRODUCTS . " set products_ordered = products_ordered + " . sprintf('%d', $order->products[$i]['qty']) . " where products_id = '" . zen_get_prid($order->products[$i]['id']) . "'");
 
-
-
             $sql_data_array = array('orders_id' => $zf_insert_id,
                 'products_id' => zen_get_prid($order->products[$i]['id']),
                 'products_model' => $order->products[$i]['model'],
@@ -1516,9 +1112,6 @@ class multisafepay_payafter {
                 'products_discount_type' => $order->products[$i]['products_discount_type'],
                 'products_discount_type_from' => $order->products[$i]['products_discount_type_from'],
                 'products_prid' => $order->products[$i]['id']);
-
-
-
 
             zen_db_perform(TABLE_ORDERS_PRODUCTS, $sql_data_array);
 
@@ -1572,8 +1165,6 @@ class multisafepay_payafter {
                                  from " . TABLE_PRODUCTS_OPTIONS . " popt, " . TABLE_PRODUCTS_OPTIONS_VALUES . " poval, " . TABLE_PRODUCTS_ATTRIBUTES . " pa
                                  where pa.products_id = '" . $order->products[$i]['id'] . "' and pa.options_id = '" . (int) $order->products[$i]['attributes'][$j]['option_id'] . "' and pa.options_id = popt.products_options_id and pa.options_values_id = '" . (int) $order->products[$i]['attributes'][$j]['value_id'] . "' and pa.options_values_id = poval.products_options_values_id and popt.language_id = '" . $_SESSION['languages_id'] . "' and poval.language_id = '" . $_SESSION['languages_id'] . "'");
                     }
-
-
 
                     //clr 030714 update insert query.  changing to use values form $order->products for products_options_values.
                     $sql_data_array = array('orders_id' => $zf_insert_id,
@@ -1631,8 +1222,16 @@ class multisafepay_payafter {
         $this->order_id = $insert_id;
     }
 
-    // ---- Ripped from includes/functions/general.php ----
-
+    /**
+     * 
+     * @global type $db
+     * @param type $address_format_id
+     * @param string $address
+     * @param type $html
+     * @param type $boln
+     * @param type $eoln
+     * @return string
+     */
     function _address_format($address_format_id, $address, $html, $boln, $eoln)
     {
         global $db;
@@ -1707,6 +1306,13 @@ class multisafepay_payafter {
         return $address;
     }
 
+    /**
+     * 
+     * @param type $string
+     * @param type $translate
+     * @param type $protected
+     * @return type
+     */
     function _output_string($string, $translate = false, $protected = false)
     {
         if ($protected == true) {
@@ -1720,22 +1326,45 @@ class multisafepay_payafter {
         }
     }
 
+    /**
+     * 
+     * @param type $string
+     * @return type
+     */
     function _output_string_protected($string)
     {
         return $this->_output_string($string, false, true);
     }
 
+    /**
+     * 
+     * @param type $data
+     * @param type $parse
+     * @return type
+     */
     function _parse_input_field_data($data, $parse)
     {
         return strtr(trim($data), $parse);
     }
 
+    /**
+     * 
+     * @global type $request_type
+     * @global type $session_started
+     * @global type $SID
+     * @param type $page
+     * @param type $parameters
+     * @param type $connection
+     * @param type $add_session_id
+     * @param type $unused
+     * @param type $escape_html
+     * @return string
+     */
     function _href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $unused = true, $escape_html = true)
     {
         global $request_type, $session_started, $SID;
 
         unset($unused);
-
 
         if (!zen_not_null($page)) {
             die('</td></tr></table></td></tr></table><br><br><font color="#ff0000"><b>Error!</b></font><br><br><b>Unable to determine the page link!<br><br>');
@@ -1769,9 +1398,6 @@ class multisafepay_payafter {
         while ((substr($link, -1) == '&') || (substr($link, -1) == '?'))
             $link = substr($link, 0, -1);
 
-
-
-
         // Add the session ID when moving from different HTTP and HTTPS servers, or when SID is defined
         if (($add_session_id == true) && ($session_started == true) && (SESSION_FORCE_COOKIE_USE == 'False')) {
             if (zen_not_null($SID)) {
@@ -1796,10 +1422,11 @@ class multisafepay_payafter {
         return $link;
     }
 
-    // ---- installation & configuration ----
-
-    /*
+    /**
      * Checks whether the payment has been “installed” through the admin panel
+     * 
+     * @global type $db
+     * @return type
      */
     function check()
     {
@@ -1840,8 +1467,8 @@ class multisafepay_payafter {
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) VALUES ('Set Refunded Order Status',    'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_REFUNDED',    0, 'Refunded', '6', '0', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) VALUES ('Set Expired Order Status',     'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_EXPIRED',     0, 'Expired', '6', '0', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) VALUES ('Set Partial Refunded Order Status',     'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_PARTIAL_REFUNDED',     0, 'Partial Refunded', '6', '0', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Minimum transaction amount', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_MIN_AMOUNT', '', 'Minimum amount for Pay After Delivery in cents', '6', '23', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Maximum transaction amount', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_MAX_AMOUNT', '', 'Maximum amount for Pay After Delivery in cents', '6', '23', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Minimum transaction amount', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_MIN_AMOUNT', '1500', 'Minimum amount for Pay After Delivery in cents', '6', '23', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Maximum transaction amount', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_MAX_AMOUNT', '30000', 'Maximum amount for Pay After Delivery in cents', '6', '23', now())");
     }
 
     /*

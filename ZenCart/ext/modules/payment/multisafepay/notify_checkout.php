@@ -9,6 +9,7 @@ require("includes/application_top.php");
 require("includes/modules/payment/multisafepay.php");
 require("includes/modules/payment/multisafepay_fastcheckout.php");
 require("includes/modules/payment/multisafepay_payafter.php");
+require("includes/modules/payment/multisafepay_klarna.php");
 $initial_request = ($_GET['type'] == 'initial');
 
 
@@ -44,10 +45,16 @@ if (empty($_GET['transactionid'])) {
 
     if ($payment_module->msp->orders->data->fastcheckout === "NO") {
         if ($payment_module->msp->orders->data->payment_details->type == "PAYAFTER") {
+            $merchant_order_id = $payment_module->msp->orders->data->order_id;
             $payment_module = new multisafepay_payafter();
-            $payment_module->order_id = $_GET['transactionid'];
+            $payment_module->order_id = $merchant_order_id; //$_GET['transactionid'];
             $_SESSION['payment'] = 'multisafepay_payafter';
             //$payment_module = $GLOBALS[$payment_modules->selected_module];
+        } elseif ($payment_module->msp->orders->data->payment_details->type == "KLARNA") {
+            $merchant_order_id = $payment_module->msp->orders->data->order_id;
+            $payment_module = new multisafepay_klarna();
+            $payment_module->order_id = $merchant_order_id; //$_GET['transactionid'];
+            $_SESSION['payment'] = 'multisafepay_klarna';
         }
     } elseif ($payment_module->msp->orders->data->fastcheckout === "YES") {
         $payment_module = new multisafepay_fastcheckout();
@@ -72,6 +79,7 @@ if (empty($_GET['transactionid'])) {
     {
         case "initialized":
         case "completed":
+        case "uncleared":
             $message = "OK";
             $url = zen_href_link("ext/modules/payment/multisafepay/success.php", $parameters, 'NONSSL');
             break;
