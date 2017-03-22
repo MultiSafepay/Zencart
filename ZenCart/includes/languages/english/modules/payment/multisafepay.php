@@ -11,6 +11,5 @@ define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_DECLINED', 'Transaction is declin
 define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_REVERSED', 'Transaction is reversed');
 define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_REFUNDED', 'Transaction is refunded');
 define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_EXPIRED', 'Transaction is expired');
-
 define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'at');
 ?>

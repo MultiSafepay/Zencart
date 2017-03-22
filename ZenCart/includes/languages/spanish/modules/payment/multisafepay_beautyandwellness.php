@@ -1,0 +1,5 @@
+<?php
+
+define('MODULE_PAYMENT_MSP_BEAUTYANDWELLNESS_TEXT_TITLE', 'Beauty & Wellness Cadeau');
+define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'en');
+?>

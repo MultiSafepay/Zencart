@@ -1,0 +1,5 @@
+<?php
+
+define('MODULE_PAYMENT_MSP_FIETSENBON_TEXT_TITLE', 'Fietsenbon');
+define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'a');
+?>

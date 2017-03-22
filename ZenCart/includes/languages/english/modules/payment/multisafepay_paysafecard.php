@@ -1,4 +1,5 @@
 <?php
 
 define('MODULE_PAYMENT_MSP_PAYSAFECARD_TEXT_TITLE', 'PaySafeCard');
+define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'at');
 ?>

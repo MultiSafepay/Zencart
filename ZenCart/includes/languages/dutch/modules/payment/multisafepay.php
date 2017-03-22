@@ -11,6 +11,5 @@ define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_DECLINED', 'Transactie is afgewez
 define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_REVERSED', 'Transactie is teruggedraaid');
 define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_REFUNDED', 'Transactie is terugbetaald');
 define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_EXPIRED', 'Transactie is verlopen');
-
 define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'bij');
 ?>

@@ -151,7 +151,7 @@ if (!class_exists('multisafepay')) {
 
         function process_button()
         {
-            
+            return zen_draw_hidden_field('msp_paymentmethod', 'CONNECT');            
         }
 
         // ---- process payment ----
@@ -322,9 +322,9 @@ if (!class_exists('multisafepay')) {
                     "manual" => false,
                     "days_active" => MODULE_PAYMENT_MULTISAFEPAY_DAYS_ACTIVE,
                     "payment_options" => array(
-                        "notification_url" => $this->_href_link('ext/modules/payment/multisafepay/notify_checkout.php?type=initial', '', 'NONSSL', false, false),
+                        "notification_url" => $this->_href_link('ext/modules/payment/multisafepay/notify_checkout.php?type=initial&', '', 'NONSSL', false, false),
                         "redirect_url" => $redirect_url,
-                        "cancel_url" => $this->_href_link('ext/modules/payment/multisafepay/cancel.php', '', 'NONSSL', false, false),
+                        "cancel_url" => $this->_href_link('ext/modules/payment/multisafepay/cancel.php'), //zen_href_link(FILENAME_CHECKOUT_PAYMENT),
                         "close_window" => true
                     ),
                     "customer" => $customer_data,
@@ -1234,21 +1234,17 @@ if (!class_exists('multisafepay')) {
             );
         }
 
+        /**
+         * 
+         * @global type $PHP_SELF
+         * @return type
+         */
+        
         function getScriptName()
         {
-
             global $PHP_SELF;
 
             return basename($PHP_SELF);
-            /*
-              if (isset($_SERVER["SCRIPT_NAME"])){
-              $file 	= $_SERVER["SCRIPT_NAME"];
-              $break 	= Explode('/', $file);
-              $file 	= $break[count($break) - 1];
-              };
-
-              return $file;
-             */
         }
 
         /**
@@ -1373,7 +1369,7 @@ if (!class_exists('multisafepay')) {
                     return MODULE_PAYMENT_MSP_TUINBON_TEXT_TITLE;
                 case "Wellness Giftcard":
                     return MODULE_PAYMENT_MSP_WELLNESS_TEXT_TITLE;
-
+                    
                 case MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE:
                     return MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE;
                     break;

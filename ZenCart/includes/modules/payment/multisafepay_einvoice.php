@@ -455,8 +455,13 @@ class multisafepay_einvoice {
                 return $msp->orders->getPaymentLink();
             }
         } catch (Exception $e) {
-            $this->_error_redirect(htmlspecialchars($e->getMessage()));
-            die();
+           if ($this->getErrorcode($e->getMessage()) == "1024") {
+                $this->_error_redirect(MODULE_PAYMENT_MULTISAFEPAY_EINVOICE_TEXT_ERROR_1024);
+                die();
+            } else {
+                $this->_error_redirect(htmlspecialchars($e->getMessage()));
+                die();
+            }
         }
     }
 

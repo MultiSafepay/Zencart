@@ -1,0 +1,5 @@
+<?php
+
+define('MODULE_PAYMENT_MSP_FASHIONGIFTCARD_TEXT_TITLE', 'Fashion Giftcard');
+define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'a');
+?>

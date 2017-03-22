@@ -1,0 +1,5 @@
+<?php
+
+define('MODULE_PAYMENT_MSP_MASTERCARD_TEXT_TITLE', 'MasterCard');
+define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'bij');
+?>

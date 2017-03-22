@@ -66,8 +66,17 @@ if (empty($_GET['transactionid'])) {
 
     include_once("includes/languages/english/modules/payment/" . $_SESSION['payment'] . ".php");
 
+
+    
     $GLOBALS[$_SESSION['payment']] = $payment_module;
-    $GLOBALS[$_SESSION['payment']]->title = MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE;
+    
+    if(isset($payment_module->msp->orders->data->payment_details->type))
+    {
+        $GLOBALS[$_SESSION['payment']]->title   =   $payment_module->msp->orders->data->payment_details->type;
+    } else {
+        $GLOBALS[$_SESSION['payment']]->title   =   MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE;        
+    }    
+    
     $status = $payment_module->checkout_notify();
 }
 

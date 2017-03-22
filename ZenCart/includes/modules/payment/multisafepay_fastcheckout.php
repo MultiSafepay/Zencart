@@ -60,13 +60,11 @@ class multisafepay_fastcheckout {
     {
         $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
 
-        $title .= ($this->checkView() == "admin") ? "MultiSafepay " : "";
+        $title .= ($this->checkView() == "admin") ? "MultiSafepay - " : "";
         if ($admin && $this->checkView() == "admin") {
             $title .= $admin;
         } else {
-            if (MODULE_PAYMENT_MULTISAFEPAY_FCO_TITLES_ENABLER == "True") {
-                $title .= $this->getLangStr($admin);
-            }
+            $title .= $this->getLangStr($admin);
         }
 
         return $title;

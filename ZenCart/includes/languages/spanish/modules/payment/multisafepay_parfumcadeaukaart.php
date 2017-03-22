@@ -1,0 +1,5 @@
+<?php
+
+define('MODULE_PAYMENT_MSP_PARFUMCADEAUKAART_TEXT_TITLE', 'Parfum Cadeaukaart');
+define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'en');
+?>

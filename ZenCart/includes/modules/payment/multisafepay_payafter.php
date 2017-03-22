@@ -389,7 +389,7 @@ class multisafepay_payafter {
                 "payment_options" => array(
                     "notification_url" => $this->_href_link('ext/modules/payment/multisafepay/notify_checkout.php?type=initial&' . $sid, '', 'NONSSL', false, false),
                     "redirect_url" => $redirect_url,
-                    "cancel_url" => zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'),
+                    "cancel_url" => $this->_href_link('ext/modules/payment/multisafepay/cancel.php'), //zen_href_link(FILENAME_CHECKOUT_PAYMENT),
                     "close_window" => "true"
                 ),
                 "customer" => array(
@@ -497,15 +497,27 @@ class multisafepay_payafter {
                     $checkoutoptions_array['tax_tables']['alternate'][] = array(
                         "standalone" => false,
                         "name" => "BTW0",
-                        "rules" => array
+                        "rules" => array(array
                             (
                             "rate" => 0.00
-                        )
+                        ))
                     );
                 }
             }
         }
 
+        //if (!$this->in_array_recursive(key($product['tax_groups']), $checkoutoptions_array['tax_tables']['alternate'])) {
+            $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                "standalone" => false,
+                "name" => "BTW0",
+                "rules" => array(array
+                    (
+                    "rate" => 0.00
+                ))
+            );
+        //}        
+        
+        
         if ($order->info['shipping_cost'] != '0.00') {
             if ($this->in_array_recursive(current(array_keys($order->info['tax_groups'])), $checkoutoptions_array['tax_tables']['alternate'])) {
                 $tax_percentage = $order->info['shipping_tax'] / ( $order->info['shipping_cost'] / 100);
@@ -580,10 +592,32 @@ class multisafepay_payafter {
                 )
             );
         }
+        
+        if (isset($GLOBALS['ot_coupon']->deduction)) {            
+            if ($GLOBALS['ot_coupon']->deduction != '') {
+                if($GLOBALS['ot_coupon']->include_tax != "true")
+                {
+                    $this->_error_redirect("The option \"Include Tax\" must be enabled under Modules > Order Total, when processing discounts.");
+                }                
+                
+                $shoppingcart_array['items'][]  =   array(
+                    "name"          =>  $GLOBALS['ot_coupon']->title,
+                    "description"   =>  $GLOBALS['ot_coupon']->header,
+                    "unit_price"    =>  -$GLOBALS['ot_coupon']->deduction,
+                    "quantity"      =>  1,
+                    "merchant_item_id"  =>  $GLOBALS['ot_coupon']->code,
+                    "tax_table_selector"    =>  "BTW0",
+                    "weight"    =>  array(
+                        "unit"  =>  "KG",
+                        "value" =>  0
+                    )
+                );
+            }
+        }
 
-        /**
-          //Fee
 
+        //Fee
+        /*
           if (isset($GLOBALS['surcharge_cost']))
           {
 
@@ -603,22 +637,9 @@ class multisafepay_payafter {
           $c_item->SetMerchantItemId('Fee');
           $c_item->SetTaxTableSelector('BTW21');
           $msp->cart->AddItem($c_item);
-          }
-
-          //add coupon
-
-          if (isset($GLOBALS['ot_coupon']->deduction))
-          {
-          if ($GLOBALS['ot_coupon']->deduction != '')
-          {
-          $c_item = new MspItem('Discount' . " " . $GLOBALS['order']->info['currency'], 'Shipping', '1', -$GLOBALS['ot_coupon']->deduction, '0', '0');
-          $msp->cart->AddItem($c_item);
-          $c_item->SetMerchantItemId('discount');
-          $c_item->SetTaxTableSelector('BTW0');
-          }
-          }
-
+          
          */
+
         return $shoppingcart_array;
     }
 
@@ -1394,7 +1415,9 @@ class multisafepay_payafter {
         }
 
         while ((substr($link, -1) == '&') || (substr($link, -1) == '?'))
+        {
             $link = substr($link, 0, -1);
+        }
 
         // Add the session ID when moving from different HTTP and HTTPS servers, or when SID is defined
         if (($add_session_id == true) && ($session_started == true) && (SESSION_FORCE_COOKIE_USE == 'False')) {
@@ -1452,7 +1475,7 @@ class multisafepay_payafter {
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Automatically redirect the customer back to the webshop.', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_AUTO_REDIRECT', 'True', 'Enable auto redirect after payment', '6', '20', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Google Analytics', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_GA_ACCOUNT', '', 'Google Analytics Account ID', '6', '22', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Days Active.', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_DAYS_ACTIVE', '', 'Allow MultiSafepay to attempt to close unpaid orders after X number of days.', '6', '22', now())");
-
+        
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) VALUES ('Payment Zone', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ZONE', '0', 'If a zone is selected, only enable this payment method for that zone.', '6', '25', 'zen_get_zone_class_title', 'zen_cfg_pull_down_zone_classes(', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Sort order of display.', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_SORT_ORDER', '0', 'Sort order of display. Lowest is displayed first.', '6', '0', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) VALUES ('Set Initialized Order Status', 'MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_ORDER_STATUS_ID_INITIALIZED', 0, 'In progress', '6', '0', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
