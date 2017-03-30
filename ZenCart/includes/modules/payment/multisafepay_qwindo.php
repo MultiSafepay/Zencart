@@ -4,6 +4,10 @@ require( "multisafepay.php" );
 
 class multisafepay_qwindo extends multisafepay {
 
+    /**
+     * Construct
+     */
+    
     function __construct()
     {
         $this->code = 'multisafepay_qwindo';
@@ -11,15 +15,6 @@ class multisafepay_qwindo extends multisafepay {
         $this->description = "<img src='images/icon_info.gif' border='0'>&nbsp;<b>MultiSafepay Qwindo</b><br /><br />This module isn't an actual payment method, but rather a module allowing you to configure additional webshop data for Qwindo.<br />";
         $this->enabled = false; //Hide from checkout
         $this->sort_order = 999;
-    }
-
-    /**
-     * 
-     * @return type
-     */
-    function process_button()
-    {
-        
     }
 
     /**
@@ -48,7 +43,7 @@ class multisafepay_qwindo extends multisafepay {
     {
         global $db;
 
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable Qwindo/FCO feed', 'MODULE_PAYMENT_MSP_QWINDO_STATUS', 'False', '', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable Qwindo Product Feed', 'MODULE_PAYMENT_MSP_QWINDO_STATUS', 'False', '', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Including tax', 'MODULE_PAYMENT_MSP_QWINDO_INCL_TAX', 'True', 'Do the product prices include tax?', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Shipping required', 'MODULE_PAYMENT_MSP_QWINDO_REQ_SHIP', 'True', 'Are orders placed in your webshop required to be shipped?', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Webshop Base URL', 'MODULE_PAYMENT_MSP_QWINDO_URL_BASE', '', 'Your webshop\'s Base URL', '6', '22', now())");

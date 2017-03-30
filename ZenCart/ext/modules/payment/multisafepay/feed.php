@@ -1,429 +1,301 @@
 <?php
 
 /**
- *  FastCheckout Shop Feed for ZenCart
+ *  Qwindo Shop Feed for ZenCart
  */
+
 chdir("../../../../");
 
 require("includes/application_top.php");
+require("qwindo_functions.php");
 
-//Validate required parameters depending on $_identifier
+$q  =   new Qwindo();
 
-header('X-Feed-Version: 1.0');
-header('api_key:' . $_GET['api_key']);
+echo $q->switchIdentifier($_GET['identifier']);
 
-
-$_identifier = $_GET['identifier'];
-
-switch ($_identifier)
-{
-    case "products": //Both in progress
-        if (empty($_GET['category_id'])) {
-            //echo json_encode(getProductById($_GET['language'], $_GET['product_id']));                
-            var_dump(getProductById($_GET['language'], $_GET['product_id']));
-        } elseif (!empty($_GET['category_id'])) {
-            //echo json_encode(getProductsByCategoryID($_GET['language'], $_GET['category_id']));                   
-            var_dump(getProductsByCategoryID($_GET['language'], $_GET['category_id']));
-        }
-        break;
-    case "tax":
-        echo json_encode(getTaxRules(), JSON_PRETTY_PRINT);
-        break;
-    case "stock":
-        echo json_encode(getStockByProductID($_GET['product_id']), JSON_PRETTY_PRINT);
-        break;
-    case "shipping":
-        echo json_encode(getShippingMethodsByCountryCode($_GET['countrycode'], $_GET['language']));
-        break;
-    case "categories": //In progress
-        echo json_encode(getCategories($_GET['language']), JSON_PRETTY_PRINT);
-        break;
-    case "stores":
-        echo json_encode(getShopInfo(), JSON_PRETTY_PRINT);
-        break;
-    default:
-        //default action, throw exception? default message? (Invalid identifier)
-        //die('Invalid identifier specified');
-        break;
-}
 
 /**
- * FCO Shop Feed: Product by ID
+ * Qwindo code overview
+ * 
+ * 1. Categories
+ * 2. Products
+ * 3. Stock
+ * 4. Shipping methods
+ * 5. Store info
+ */
+
+
+/**
+ * Qwindo Feed: 1. getCategories
  * 
  * @global type $db
- * @param type $language_locale
- * @param type $product_id
- * @return array
+ * @global Qwindo $q
+ * @return type
  */
-function getProductById($language_locale, $product_id)
+
+function getCategories()
 {
     global $db;
+    global $q;
 
-    $language_id = getLangIDByLocale($language_locale);
+    $categories_array   =   array();
+ 
+    $category_query     =   "SELECT * FROM " . TABLE_CATEGORIES
+                        .   " AS cat INNER JOIN " . TABLE_CATEGORIES_DESCRIPTION
+                        .   " AS cd on cat.parent_id=cd.categories_id WHERE cat.categories_status='1'";
+    $category_result    =   $db->Execute($category_query);
+    
+    if($category_result->RecordCount() > 0)
+    {
+        while(!$category_result->EOF)
+        {
+            $category_ids[]    =   $category_result->fields['categories_id'];
+            $category_result->MoveNext();
+        }
+    }
+    
+    $category_ids   =   array_unique($category_ids);
+    
+    foreach ($category_ids as $cid)
+    {
+        $query = "SELECT * FROM " . TABLE_CATEGORIES
+                . " AS cat INNER JOIN " . TABLE_CATEGORIES_DESCRIPTION
+                . " AS cd on cat.categories_id=cd.categories_id WHERE cat.parent_id={$cid}";
 
-    //If language_id returned is null, then ommit from query
+        $result = $db->Execute($query);
 
-    if (!is_null($language_id)) {
-        $lang_whereclause = " AND pdesc.language_id = {$language_id} AND cd.language_id = {$language_id}";
+        if ($result->RecordCount() > 0) {
+            while (!$result->EOF) {
+                //$parent = zen_get_categories_parent_name($result->fields['categories_id']);
+                $result->MoveNext();
+            }
+        }
+        
+        $data   =   zen_get_categories('', $cid, '', '1');
+        $children   =   array();
+        
+        foreach($data as $d)
+        {
+            $children[]   =   array(
+                "id"    =>  $d['id'],
+                "title" =>  array($q->getLocale($result->fields['language_id'])  =>  $d['text'])
+            );
+        }
+        
+        $categories_array[] = array(
+            "id" => $cid,
+            "title" => array(
+                $q->getLocale($result->fields['language_id']) => zen_get_categories_parent_name($result->fields['categories_id'])
+            ),
+            "children" => $children //zen_get_categories('', $cid, '', '1')
+            /*
+            "children" => array(
+                "id"    => $result->fields['categories_id'],
+                "title" =>  array(
+                    $q->getLocale($result->fields['language_id']) =>  $data['text']
+                )
+            )*/
+        );
     }
 
-    $product_query = "SELECT * FROM " . TABLE_PRODUCTS
-            . " AS p INNER JOIN " . TABLE_PRODUCTS_DESCRIPTION
-            . " AS pdesc on p.products_id=pdesc.products_id"
-            . " INNER JOIN " . TABLE_MANUFACTURERS
-            . " AS m on p.manufacturers_id=m.manufacturers_id"
-            . " INNER JOIN " . TABLE_CATEGORIES
-            . " AS c on p.master_categories_id=c.categories_id"
-            . " INNER JOIN " . TABLE_CATEGORIES_DESCRIPTION
-            . " AS cd on c.categories_id=cd.categories_id"
-            . " WHERE p.products_id = {$product_id} {$lang_whereclause}";
+    //var_dump($categories_array);exit;
+    
+    return $categories_array;
+}
 
-    $result = $db->Execute($product_query);
+
+
+/**
+ * Qwindo Feed: 2. getProduct
+ * 
+ * @global type $db
+ * @param type $product_id
+ * @return array json
+ */
+
+function getProduct($product_id)
+{
+    if ($product_id == "") {
+        die("No Product ID supplied.");
+    }
+    
+    global $db;
+
+    $product_query  = "SELECT * FROM " . TABLE_PRODUCTS
+                    . " AS p INNER JOIN " . TABLE_PRODUCTS_DESCRIPTION
+                    . " AS pdesc on p.products_id=pdesc.products_id"
+                    . " INNER JOIN " . TABLE_MANUFACTURERS
+                    . " AS m on p.manufacturers_id=m.manufacturers_id"
+                    . " INNER JOIN " . TABLE_CATEGORIES
+                    . " AS c on p.master_categories_id=c.categories_id"
+                    . " INNER JOIN " . TABLE_CATEGORIES_DESCRIPTION
+                    . " AS cd on c.categories_id=cd.categories_id"
+                    . " INNER JOIN " . TABLE_TAX_CLASS
+                    . " AS tc on p.products_tax_class_id=tc.tax_class_id"
+                    . " INNER JOIN " . TABLE_TAX_RATES
+                    . " AS tr on tc.tax_class_id=tr.tax_rates_id"
+                    . " INNER JOIN " . TABLE_GEO_ZONES
+                    . " AS gz on tr.tax_zone_id =gz.geo_zone_id"
+                    . " INNER JOIN " . TABLE_ZONES_TO_GEO_ZONES
+                    . " AS ztgz on gz.geo_zone_id=ztgz.geo_zone_id"
+                    . " INNER JOIN " . TABLE_COUNTRIES
+                    . " AS co on ztgz.zone_country_id=co.countries_id"
+                    . " WHERE p.products_id = {$product_id}";
+
+    $product_result = $db->Execute($product_query);
 
     //Retrieve the product's main category
-
-    if (!is_null($language_id)) {
-        $maincat_whereclause = " AND " . TABLE_CATEGORIES_DESCRIPTION . ".language_id = {$language_id}";
-    }
 
     $cat_id_query = "SELECT master_categories_id FROM " . TABLE_PRODUCTS . " WHERE products_id = {$product_id}";
     $cat_id_result = $db->Execute($cat_id_query)->fields['master_categories_id'];
     $main_cat_query = "SELECT parent_id FROM " . TABLE_CATEGORIES . " WHERE categories_id  =   {$cat_id_result}";
     $main_cat_result = $db->Execute($main_cat_query)->fields['parent_id'];
-    $main_query = "SELECT categories_name FROM " . TABLE_CATEGORIES_DESCRIPTION . " WHERE categories_id = {$main_cat_result} {$maincat_whereclause}";
+    $main_query = "SELECT categories_name FROM " . TABLE_CATEGORIES_DESCRIPTION . " WHERE categories_id = {$main_cat_result} ";
     $main_category = $db->Execute($main_query)->fields['categories_name'];
-
-    //Determine whether or not product has been previously modified
-
-    if (!is_null($result->fields['products_last_modified'])) {
-        $last_modified = getDateTimeStamp($result->fields['products_last_modified']);
-    } else {
-        $last_modified = null;
-    }
 
     //Determine whether or not SSL has been enabled
 
     if (!ENABLE_SSL) {
-        $host = HTTP_SERVER;
+        $protocol = HTTP_SERVER;
     } else {
-        $host = HTTPS_SERVER;
+        $protocol = HTTPS_SERVER;
     }
 
     //Retrieve product attributes (product "options" in ZenCart)
 
-
-
     $product_attributes_array = array(
+        
     );
 
-    //var_dump($result);exit;
+    while(!$product_result->EOF)
+    {
+        $test[] = $product_result->fields;
+        $product_result->MoveNext();
+    }
+    
+    var_dump($test);
+    exit;
 
     $product_array = array
+    (
+        "product_id"                =>  (int) $product_result->fields['products_id'],
+        "product_name"              =>  $product_result->fields['products_name'],
+        "brand"                     =>  $product_result->fields['manufacturers_name'],
+        "sku_number"                =>  $product_result->fields['products_model'],
+        "primary_category"          =>  $main_category,
+        "secondary_category"        =>  $product_result->fields['categories_name'],
+        "product_url"               =>  $product_result->fields['products_url'],
+        "short_product_description" =>  substr($product_result->fields['products_description'], 0, 255),
+        "long_product_description"  =>  $product_result->fields['products_description'],
+        "sale_price"                =>  (double) $product_result->fields['products_price_sorter'],
+        "retail_price"              =>  (double) $product_result->fields['products_price'],
+        "tax"   =>  array
         (
-        "ProductID" => (int) $result->fields['products_id'],
-        "ProductName" => $result->fields['products_name'],
-        "Brand" => $result->fields['manufacturers_name'],
-        "SKUnumber" => $result->fields['products_model'],
-        "PrimaryCategory" => $main_category,
-        "SecondaryCategory" => $result->fields['categories_name'],
-        "ProductURL" => $result->fields['products_url'],
-        "ShortProductDescription" => substr($result->fields['products_description'], 0, 255),
-        "LongProductDescription" => $result->fields['products_description'],
-        "SalePrice" => (double) $result->fields['products_price_sorter'],
-        "RetailPrice" => (double) $result->fields['products_price'],
-        "FTIN" => false,
-        "MPN" => false,
-        "UniqueIdentifier" => false,
-        "Currency" => '', //NA
-        "TaxId" => (int) $result->fields['products_tax_class_id'],
-        "Stock" => (int) $result->fields['products_quantity'],
-        "Metadata" => array
+            "id"        =>  (int) $product_result->fields['tax_class_id'],
+            "name"      =>  $product_result->fields['tax_class_title'],
+            "rules"     =>  array
             (
-            "key" => 'value', //NA
-            "key1" => 'value1' //NA
+                $product_result->fields['countries_iso_code_2'] =>  $product_result->fields['tax_rate']
+            )
         ),
-        "Created" => getDateTimeStamp($result->fields['products_date_added']),
-        "Updated" => $last_modified,
-        "Downloadable" => (boolean) $result->fields['products_virtual'],
-        "PackageDimensions" => '', //NA
-        "Weight" => (double) $result->fields['products_weight'],
-        "ProductImageURLs" => array
-            (
+        "gtin"                      =>  null,
+        "mpn"                       =>  null,
+        "unique_identifier"         =>  true,
+        "stock"                     =>  (int) $product_result->fields['products_quantity'],
+        "metadata"  =>  array
+        (
+            "key"   =>  'value', //NA
+            "key1"  =>  'value1' //NA
+        ),
+        "created"                   =>  $product_result->fields['products_date_added'],
+        "updated"                   =>  $product_result->fields['products_last_modified'],
+        "downloadable"              =>  (boolean) $product_result->fields['products_virtual'],
+        "package_dimensions"        =>  "",
+        "dimension_unit"            =>  "",
+        "weight"                    =>  (double) $product_result->fields['products_weight'],
+        "weight_unit"               =>  TEXT_PRODUCT_WEIGHT_UNIT,
+        "product_image_urls" => array
+        (
             array
-                (
-                "url" => $host . DIR_WS_CATALOG . DIR_WS_IMAGES . $result->fields['products_image'],
-                "main" => true
+            (
+                "url"   =>  $protocol . DIR_WS_CATALOG . DIR_WS_IMAGES . $product_result->fields['products_image'],
+                "main"  =>  true
             )
         ),
-        $product_attributes_array,
-        //DB: products_options x3
-        "Options" => array(
-            "GlobalOptions" => array(
-                "Shoe size" => array(
-                    "102" => array(
-                        "Label" => "6",
-                        "Pricing" => null
-                    ),
-                    "101" => array(
-                        "Label" => "7",
-                        "Pricing" => null
-                    ),
-                    "100" => array(
-                        "Label" => "8",
-                        "Pricing" => null
-                    ),
-                    "99" => array(
-                        "Label" => "9",
-                        "Pricing" => null
-                    ),
-                    "98" => array(
-                        "Label" => "10",
-                        "Pricing" => null
-                    )
-                )
-            )
-        )
+        "attributes"    =>  array(),
+        "options"       =>  array(),
+        "varients"      =>  array(),
     );
 
     return $product_array;
 }
 
-/**
- * FCO Shop Feed: Products by CategoryID
- * 
- * @global type $db
- * @param type $language_locale
- * @param type $category_id
- * @return type array
- */
-function getProductsByCategoryID($language_locale, $category_id)
-{
-    global $db;
 
-    $language_id = getLangIDByLocale($language_locale);
-
-    $product_query = "SELECT ...";
-
-    $product_result = $db->Execute($product_query);
-}
 
 /**
- * FCO Shop Feed: Tax Rules
- * 
- * @global type $db
- * @return type array
- */
-function getTaxRules()
-{
-    global $db;
-
-    /**
-     *  Retrieve available tax rates
-     */
-    $taxrules_array = array();
-
-    $tax_query = "SELECT * FROM " . TABLE_TAX_RATES
-            . " AS tr INNER JOIN " . TABLE_TAX_CLASS
-            . " AS tc on tr.tax_class_id=tc.tax_class_id"
-            . " INNER JOIN " . TABLE_GEO_ZONES
-            . " AS gz on tr.tax_zone_id=gz.geo_zone_id"
-            . " INNER JOIN " . TABLE_ZONES_TO_GEO_ZONES
-            . " AS ztgz on gz.geo_zone_id=ztgz.geo_zone_id"
-            . " INNER JOIN " . TABLE_ZONES
-            . " AS z on ztgz.zone_country_id=z.zone_country_id";
-
-    $tax_result = $db->Execute($tax_query);
-
-    if ($tax_result->RecordCount() > 0) {
-        while (!$tax_result->EOF) {
-
-            $taxrules_array[] = array
-                (
-                "id" => (int) $tax_result->fields['tax_rates_id'],
-                "name" => $tax_result->fields['tax_class_title'],
-                "rules" => array
-                    (
-                    $tax_result->fields['zone_code'] => /* (float) */ $tax_result->fields['tax_rate']
-                )
-            );
-            $tax_result->MoveNext();
-        }
-    }
-
-    return $taxrules_array;
-}
-
-/**
- * FCO Shop Feed: Stock
+ * Qwindo Feed: 3. getStock
  * 
  * @global type $db
  * @param type $product_id
- * @return array
+ * @return array json
  */
-function getStockByProductID($product_id)
+
+function getStock($product_id)
 {
+    if ($product_id == "") {
+        die("No Product ID supplied.");
+    }
+
     global $db;
 
-    $stock_query = "SELECT products_quantity, products_id FROM " . TABLE_PRODUCTS . " as p WHERE p.products_id = {$product_id}";
-    $result = $db->Execute($stock_query);
+    $stock_query    =   "SELECT products_quantity, products_id FROM " . TABLE_PRODUCTS . " as p WHERE p.products_id = {$product_id}";
+    $stock_result   =   $db->Execute($stock_query);
 
-    $stock_array = array
+    if($stock_result->RecordCount() > 0)
+    {
+        $stock_array = array
         (
-        "ProductID" => $result->fields['products_id'],
-        "Stock" => $result->fields['products_quantity']
-    );
-
+            "product_id"    =>  $stock_result->fields['products_id'],
+            "stock"         =>  $stock_result->fields['products_quantity']
+        );
+    }
+        
     return $stock_array;
 }
 
+
+
 /**
- * FCO Shop Feed: Shopinfo
+ * Qwindo Feed: 4. getShipping
  * 
  * @global type $db
- * @return array $shopinfo_array
- */
-function getShopInfo()
-{
-    global $db;
-
-    /**
-     * Retrieve allowed/enabled countries
-     * The returned data is equal to the coutries selectable during an order placement in the webshop
-     */
-    $allowed_countries_array = array();
-
-    $allowed_countries_query = "SELECT countries_iso_code_2 FROM " . TABLE_COUNTRIES;
-
-    $result = $db->Execute($allowed_countries_query);
-
-    if ($result->RecordCount() > 0) {
-        while (!$result->EOF) {
-            $allowed_countries_array[] = $result->fields['countries_iso_code_2'];
-
-            $result->MoveNext();
-        }
-    }
-
-    /**
-     *  Retrieve supported Languages
-     */
-    $supported_languages_array = array();
-
-    $language_query = "SELECT * FROM " . TABLE_LANGUAGES;
-
-    $result = $db->Execute($language_query);
-
-    if ($result->RecordCount() > 0) {
-        while (!$result->EOF) {
-            $supported_languages_array[getLocaleFromLanguageCode($result->fields['code'])] = array
-                (
-                "title" => $result->fields['name']
-            );
-
-            $result->MoveNext();
-        }
-    }
-
-    /**
-     *  Split street and housenumber
-     */
-    if (MODULE_PAYMENT_MSP_QWINDO_STORE_ADDRESS) {
-        list($cust_street, $cust_housenumber) = parseAddress(MODULE_PAYMENT_MSP_QWINDO_STORE_ADDRESS);
-    } else {
-        $cust_street = null;
-        $cust_housenumber = null;
-    }
-
-    /**
-     *  Retrieve stock update info.
-     */
-    $stock_query = "SELECT * FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'STOCK_CHECK'";
-
-    $result = $db->Execute($stock_query);
-
-    $stock_update_enabled = (boolean) $result->fields['configuration_value'];
-
-    /**
-     *  Opening days of the store
-     */
-    $sunday = (MODULE_PAYMENT_MSP_QWINDO_OPENSUN == 'Open') ? true : false;
-    $monday = (MODULE_PAYMENT_MSP_QWINDO_OPENMON == 'Open') ? true : false;
-    $tuesday = (MODULE_PAYMENT_MSP_QWINDO_OPENTUE == 'Open') ? true : false;
-    $wednesday = (MODULE_PAYMENT_MSP_QWINDO_OPENWED == 'Open') ? true : false;
-    $thursday = (MODULE_PAYMENT_MSP_QWINDO_OPENTHU == 'Open') ? true : false;
-    $friday = (MODULE_PAYMENT_MSP_QWINDO_OPENFRI == 'Open') ? true : false;
-    $saturday = (MODULE_PAYMENT_MSP_QWINDO_OPENSAT == 'Open') ? true : false;
-
-    $shopinfo_array = array
-        (
-        "allowed_countries" => array(
-            $allowed_countries_array
-        ),
-        "languages" => array(
-            $supported_languages_array
-        ),
-        "stock_updates" => $stock_update_enabled,
-        "including_tax" => (boolean) MODULE_PAYMENT_MSP_QWINDO_INCL_TAX,
-        "require_shipping" => (boolean) MODULE_PAYMENT_MSP_QWINDO_REQ_SHIP,
-        "base_url" => MODULE_PAYMENT_MSP_QWINDO_URL_BASE,
-        "order_push_url" => MODULE_PAYMENT_MSP_QWINDO_URL_OP,
-        "coc" => MODULE_PAYMENT_MSP_QWINDO_COC,
-        "email" => MODULE_PAYMENT_MSP_QWINDO_STORE_EMAIL,
-        "contact_phone" => MODULE_PAYMENT_MSP_QWINDO_STORE_PHONE,
-        "address" => $cust_street,
-        "housenumber" => $cust_housenumber,
-        "zipcode" => MODULE_PAYMENT_MSP_QWINDO_STORE_ZIP,
-        "city" => MODULE_PAYMENT_MSP_QWINDO_STORE_CITY,
-        "country" => getCountryFromCode(MODULE_PAYMENT_MSP_QWINDO_STORE_COUNTRY),
-        "vat_nr" => MODULE_PAYMENT_MSP_QWINDO_VAT,
-        "terms_and_conditions" => MODULE_PAYMENT_MSP_QWINDO_TOC,
-        "faq" => MODULE_PAYMENT_MSP_QWINDO_FAQ,
-        "open" => MODULE_PAYMENT_MSP_QWINDO_OPEN,
-        "closed" => MODULE_PAYMENT_MSP_QWINDO_CLOSED,
-        "days" => array(
-            "Sunday" => $sunday,
-            "Monday" => $monday,
-            "Tuesday" => $tuesday,
-            "Wednesday" => $wednesday,
-            "Thursday" => $thursday,
-            "Friday" => $friday,
-            "Saturday" => $saturday
-        ),
-        "social" => array(
-            "facebook" => MODULE_PAYMENT_MSP_QWINDO_URL_FB,
-            "twitter" => MODULE_PAYMENT_MSP_QWINDO_URL_TW,
-            "linkedin" => MODULE_PAYMENT_MSP_QWINDO_URL_LI
-        )
-    );
-
-    return $shopinfo_array;
-}
-
-/**
- * FCO Shop Feed: Shipping methods 
- * 
- * @param type $country_code
- * @param type $language_locale
+ * @global Qwindo $q
+ * @global type $language
+ * @global type $currencies
+ * @param type $countrycode
  * @return type array
  */
-function getShippingMethodsByCountryCode($country_code, $language_locale)
-{
-    /**
-     *  Retrieve available shipping methods
-     */
-    //Load shipping modules
 
-    $module_directory = DIR_FS_CATALOG . DIR_WS_INCLUDES . 'modules/' . 'shipping/';
+function getShipping($countrycode)
+{
+    if ($countrycode == "") {
+        die("No Countrycode supplied.");
+    }
+
+    global $db;
+    global $q;
+
+    $shipping_array = array();
+
+    $module_directory = DIR_WS_MODULES . 'shipping/';
 
     if (!file_exists($module_directory)) {
-        die('Couldn\'t find shipping modules in: ' . $module_directory);
+        die('Unable to load shipping modules.');
     }
 
     $file_extension = substr(__FILE__, strrpos(__FILE__, '.'));
-
     $directory_array = array();
-
-    if ($dir = @dir($module_directory)) {
+    if ($dir = @ dir($module_directory)) {
         while ($file = $dir->read()) {
             if (!is_dir($module_directory . $file)) {
                 if (substr($file, strrpos($file, '.')) == $file_extension) {
@@ -434,20 +306,23 @@ function getShippingMethodsByCountryCode($country_code, $language_locale)
         sort($directory_array);
         $dir->close();
     }
-
+    
     $module_info = array();
     $module_info_enabled = array();
     $shipping_modules = array();
     for ($i = 0, $n = sizeof($directory_array); $i < $n; $i++)
     {
         $file = $directory_array[$i];
-        include_once (DIR_FS_CATALOG . DIR_WS_LANGUAGES . getLanguageByLocale($language_locale) . '/modules/shipping/' . $file);
+
+        global $language;
+
+        include_once (DIR_FS_CATALOG . DIR_WS_LANGUAGES . 'english/modules/shipping/' . $file);
         include_once ($module_directory . $file);
 
         $class = substr($file, 0, strrpos($file, '.'));
         $module = new $class;
         $curr_ship = strtoupper($module->code);
-
+        //var_dump($curr_ship);
         switch ($curr_ship)
         {
             case 'FEDEXGROUND':
@@ -471,345 +346,247 @@ function getShippingMethodsByCountryCode($country_code, $language_locale)
         }
 
         if ($module->check() == true) {
-            $module_info[$module->code] = array
-                (
+            $module_info[$module->code] = array(
                 'code' => $module->code,
                 'title' => $module->title,
                 'description' => $module->description,
-                'sort_order' => $module->sort_order,
-                'status' => $module->check(),
-                'allowed_zones' => @constant('MODULE_SHIPPING_' . $curr_ship . '_ZONE')
+                'status' => $module->check()
             );
         }
+
+
 
         if (!empty($module_info_enabled[$module->code]['enabled'])) {
             $shipping_modules[$module->code] = $module;
         }
     }
 
-    $shippingmethods_array = array();
-
     foreach ($module_info as $key => $value)
     {
-        //Check if active
         $module_name = $module_info[$key]['code'];
-        $sort_order = $module_info[$key]['sort_order'];
-        $allowed_zones = $module_info[$key]['allowed_zones'];
 
         if (!$module_info_enabled[$module_name]) {
             continue;
         }
 
         $curr_ship = strtoupper($module_name);
+
+        // calculate price
         $module = $shipping_modules[$module_name];
         $quote = $module->quote($method);
+
         $price = $quote['methods'][0]['cost'];
 
         global $currencies;
-
         $shipping_price = $currencies->get_value(DEFAULT_CURRENCY) * ($price >= 0 ? $price : 0);
+        $common_string = "MODULE_SHIPPING_" . $curr_ship . "_";
 
-        if (empty($quote['error'])) {
-            if ($country_code === getCountryByZoneID($allowed_zones)) {
-                foreach ($quote['methods'] as $method)
-                {
-                    $shippingmethods_array[] = array
+        @$zone = constant($common_string . "ZONE");
+        @$enable = constant($common_string . "STATUS");
+        @$price = constant($common_string . "COST");
+
+        if (empty($quote['error']) && $quote['id'] != 'zones') 
+        {
+            foreach ($quote['methods'] as $method)
+            {
+                if ($zone != '') {
+                    $zone_result = $db->Execute("SELECT countries_iso_code_2 FROM " . TABLE_GEO_ZONES . " AS gz " .
+                                                " INNER JOIN " . TABLE_ZONES_TO_GEO_ZONES . " AS ztgz on gz.geo_zone_id = ztgz.geo_zone_id " .
+                                                " INNER JOIN " . TABLE_COUNTRIES . " AS c on ztgz.zone_country_id = c.countries_id " .
+                                                " LEFT JOIN " . TABLE_ZONES . " AS z on ztgz.zone_id=z.zone_id WHERE gz.geo_zone_id= '" . $zone . "'");
+                    
+                    if ($zone_result->RecordCount() > 0) {
+                        while (!$zone_result->EOF) {
+                            //var_dump($zone_result->fields);
+                            $allowed_zones[] = $zone_result->fields['countries_iso_code_2'];
+                            
+                            $zone_result->MoveNext();
+                        }
+                    }
+                    
+                    $shipping_array[] = array
                         (
-                        "id" => $quote['id'],
-                        "name" => $quote['module'] . ' - ' . $quote['methods'][0]['title'],
-                        "price" => (float) $shipping_price,
-                        "sort_order" => (int) $sort_order,
-                        "allowed_areas" => getCountryByZoneID($allowed_zones)
+                        'id' => $quote['id'],
+                        'type' => $module_name,
+                        'provider' => $quote['module'],
+                        'name' => $quote['methods'][0]['title'],
+                        'price' => $shipping_price,
+                        'zone' => $allowed_zones
                     );
                 }
-            }
-
-            if ($quote['id'] === 'storepickup') {
-                $shippingmethods_array[] = array
-                    (
-                    "id" => $quote['id'],
-                    "name" => $quote['module'],
-                    "price" => (float) 0.00,
-                    "sort_order" => null,
-                    "allowed_areas" => $country_code
-                );
+                /*
+                $shipping_array[] = array
+                (
+                    'id'        =>  $quote['id'],
+                    'type'      =>  $module_name,
+                    'provider'  =>  $quote['module'],
+                    'name'      =>  $quote['methods'][0]['title'],
+                    'price'     =>  $shipping_price,
+                    'zone'      =>  $zone //
+                );*/
             }
         }
     }
 
-    return $shippingmethods_array;
+    return $shipping_array;
 }
 
 /**
- * FCO Shop Feed: Categories
+ * Qwindo Feed: 5. getStore
  * 
  * @global type $db
- * @param type $language_locale
+ * @global Qwindo $q
  * @return type array
  */
-function getCategories($language_locale)
+
+function getStore()
 {
     global $db;
+    global $q;
 
-    $language_id = getLangIDByLocale($language_locale);
-
-    //Retrieve sub categories
-    /*
-      $subcat_query   =   "SELECT * FROM " . TABLE_CATEGORIES
-      .   " AS c LEFT JOIN " . TABLE_CATEGORIES_DESCRIPTION
-      .   " AS cd on c.categories_id=cd.categories_id"
-      .   " WHERE cd.language_id='$language_id' AND c.parent_id != '0' and c.categories_status = '1'";
-
-      $subcat_result  =   $db->Execute($subcat_query);
-
-      if($subcat_result->RecordCount() > 0)
-      {
-      while(!$subcat_result->EOF)
-      {
-      $maincat_query  =   "SELECT * FROM " . TABLE_CATEGORIES
-      .   " AS c LEFT JOIN " . TABLE_CATEGORIES_DESCRIPTION
-      .   " AS cd on c.categories_id=cd.categories_id"
-      .   " WHERE cd.language_id='$language_id' AND c.parent_id='{$subcat_result->fields['categories_id']}'"
-      .   " AND c.categories_status = '1'";
-
-      $maincat_result =   $db->Execute($maincat_query);
-      var_dump($maincat_result);
-      //var_dump($subcat_result->fields);
-      $subcat_result->MoveNext();
-      }
-      }
+    /**
+     * Retrieve countries to which the webshop ships to.
      */
+    
+    /*
+    $shipping_countries_array   =   array();
+    $shipping_countries_query   =   "BLABLA";
+    $result                     =   $db->Execute($shipping_countries_query);
+    
+    if ($result->RecordCount() > 0) {
+        while (!$result->EOF) {
+            $shipping_countries_array[] = $result->fields;
+            $result->MoveNext();
+        }
+    }*/
+    
+    /**
+     * Retrieve allowed/enabled countries
+     * The returned data is equal to the coutries selectable during an order placement in the webshop
+     */
+    
+    $allowed_countries_array    =   array();
+    $allowed_countries_query    =   "SELECT countries_iso_code_2 FROM " . TABLE_COUNTRIES;
+    $result = $db->Execute($allowed_countries_query);
 
-    //return $categories_array;
-}
-
-/**
- * Helper functions
- */
-
-/**
- * Split street and housenumber
- * 
- * @param type $street_address
- * @return type
- */
-function parseAddress($street_address)
-{
-    $address = $street_address;
-    $apartment = "";
-
-    $offset = strlen($street_address);
-
-    while (($offset = rstrpos($street_address, ' ', $offset)) !== false) {
-        if ($offset < strlen($street_address) - 1 && is_numeric($street_address[$offset + 1])) {
-            $address = trim(substr($street_address, 0, $offset));
-            $apartment = trim(substr($street_address, $offset + 1));
-            break;
+    if ($result->RecordCount() > 0) {
+        while (!$result->EOF) {
+            $allowed_countries_array[] = $result->fields['countries_iso_code_2'];
+            $result->MoveNext();
         }
     }
 
-    if (empty($apartment) && strlen($street_address) > 0 && is_numeric($street_address[0])) {
-        $pos = strpos($street_address, ' ');
+    /**
+     *  Retrieve supported languages
+     */
+    
+    $supported_languages_array  =   array();
+    $language_query             =   "SELECT * FROM " . TABLE_LANGUAGES;
+    $supported_language_result  =   $db->Execute($language_query);
 
-        if ($pos !== false) {
-            $apartment = trim(substr($street_address, 0, $pos), ", \t\n\r\0\x0B");
-            $address = trim(substr($street_address, $pos + 1));
+    if ($supported_language_result->RecordCount() > 0) {
+        while (!$supported_language_result->EOF) {
+            $supported_languages_array[$q->getLocaleFromLanguageCode($supported_language_result->fields['code'])] = array
+            (
+                "title" => $supported_language_result->fields['name']
+            );
+
+            $supported_language_result->MoveNext();
         }
     }
 
-    return array($address, $apartment);
-}
-
-/**
- * 
- * @param type $haystack
- * @param type $needle
- * @param type $offset
- * @return boolean
- */
-function rstrpos($haystack, $needle, $offset = null)
-{
-    $size = strlen($haystack);
-
-    if (is_null($offset)) {
-        $offset = $size;
-    }
-
-    $pos = strpos(strrev($haystack), strrev($needle), $size - $offset);
-
-    if ($pos === false) {
-        return false;
-    }
-
-    return $size - $pos - strlen($needle);
-}
-
-/**
- * Converts datetime to timestamp
- * 
- * @param type $datetime
- * @return type int
- */
-function getDateTimeStamp($datetime)
-{
-    $date_obj = new DateTime($datetime);
-
-    return (int) $date_obj->getTimestamp();
-}
-
-/**
- * Returns language_id based on the provided locale
- * 
- * @param type $language_code
- * @return type int OR null
- */
-function getLangIDByLocale($language_code)
-{
-    global $db;
-
-    $locale = substr($language_code, 0, 2);
-
-    $language_id_query = "SELECT languages_id FROM " . TABLE_LANGUAGES . " WHERE code = '$locale'";
-
-    $result = $db->Execute($language_id_query);
-
-    if (zen_not_null($result->fields)) {
-        return $result->fields['languages_id'];
-    } else {
-        return null;
-    }
-}
-
-/**
- * Retrieve country ISO 3166-1 Alpha 2 by country name 
- * 
- * @global type $db
- * @param type $code
- * @return type
- */
-function getCountryFromCode($country_id)
-{
-    global $db;
-
-    $country = $db->Execute("SELECT countries_iso_code_2 FROM " . TABLE_COUNTRIES . " WHERE countries_id = '" . $country_id . "'");
-
-    return $country->fields['countries_iso_code_2'];
-}
-
-/**
- * Retrieve zone id from database by countrycode
- * 
- * @global type $db
- * @param type $country_code
- * @return type
- */
-function getZoneIDByCountryCode($country_code)
-{
-    global $db;
-
-    $country_id = $db->Execute("SELECT countries_id FROM " . TABLE_COUNTRIES . " WHERE countries_iso_code_2='$country_code'")->fields['countries_id'];
-    $geo_id = $db->Execute("SELECT geo_zone_id FROM " . TABLE_ZONES_TO_GEO_ZONES . " WHERE zone_country_id='$country_id'")->fields['geo_zone_id'];
-
-    return $geo_id;
-}
-
-/**
- * Retrieve countrycode by zone id
- * 
- * @global type $db
- * @param type $zone_id
- * @return type
- */
-function getCountryByZoneID($zone_id)
-{
-    global $db;
-
-    $country_id = $db->Execute("SELECT zone_country_id FROM " . TABLE_ZONES_TO_GEO_ZONES . " WHERE geo_zone_id = '$zone_id'")->fields['zone_country_id'];
-    $country_code = $db->Execute("SELECT countries_iso_code_2 FROM " . TABLE_COUNTRIES . " WHERE countries_id='$country_id'")->fields['countries_iso_code_2'];
-
-    return $country_code;
-}
-
-/**
- * Convert language_code to locale
- * 
- * @param type $language_code
- * @return type
- */
-function getLocaleFromLanguageCode($language_code)
-{
-    $locale_array = array
-        (
-        'nl' => 'nl_NL',
-        'en' => 'en_GB',
-        'fr' => 'fr_FR',
-        'es' => 'es_ES',
-        'de' => 'de_DE',
-        'it' => 'it_IT',
-        'sv' => 'sv_SE',
-        'tr' => 'tr_TR',
-        'cs' => 'cs_CS',
-        'pl' => 'pl_PL',
-        'pt' => 'pt_PT',
-        'he' => 'he_HE',
-        'ru' => 'ru_RU',
-        'ar' => 'ar_AR',
-        'cn' => 'zh_CN',
-        'ro' => 'ro_RO',
-        'da' => 'da_DA',
-        'fi' => 'fi_FI',
-        'no' => 'no_NO'
-    );
-
-    if (array_key_exists($language_code, $locale_array)) {
-        return $locale_array[$language_code];
-    } else {
-        return null;
-    }
-}
-
-/**
- * Convert language_code to locale
- * 
- * @param type $language_code
- * @return string
- */
-function getLanguageByLocale($language_code)
-{
-    $language_array = array
-        (
-        'nl_NL' => 'dutch',
-        'en_GB' => 'english',
-        'fr_FR' => 'french',
-        'es_ES' => 'spanish',
-        'de_DE' => 'german',
-        'it_IT' => 'italian'
-    );
-
-    if (array_key_exists($language_code, $language_array)) {
-        return $language_array[$language_code];
-    } else {
-        return 'english';
-    }
-}
-
-/**
- * Recursively search in an array
- * 
- * @param type $needle
- * @param type $haystack
- * @param type $strict
- * @return boolean
- */
-function in_array_recursive($needle, $haystack, $strict = false)
-{
-    foreach ($haystack as $item)
+    $supported_currencies_array =   array();
+    $currencies_query           =   "SELECT * FROM " . TABLE_CURRENCIES;
+    $result                     =   $db->Execute($currencies_query);
+    
+    if($result->RecordCount() > 0)
     {
-        if (($strict ? $item === $needle : $item == $needle) || (is_array($item) && $this->in_array_recursive($needle, $item, $strict))) {
-            return true;
+        while(!$result->EOF)
+        {
+            $supported_currencies_array[]   =   $result->fields['code'];
+            $result->MoveNext();
         }
     }
-    return false;
+    
+    /**
+     *  Split street and housenumber
+     */
+    
+    if (MODULE_PAYMENT_MSP_QWINDO_STORE_ADDRESS) {
+        list($street, $housenumber) = $q->parseAddress(MODULE_PAYMENT_MSP_QWINDO_STORE_ADDRESS);
+    } else {
+        $street      = null;
+        $housenumber = null;
+    }
+
+    /**
+     *  Retrieve stock update info.
+     */
+    
+    $stock_query            =   "SELECT * FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'STOCK_CHECK'";
+    $stock_result           =   $db->Execute($stock_query);
+    $stock_update_enabled   =   (boolean) $stock_result->fields['configuration_value'];
+
+    /**
+     *  Opening days of the store
+     */
+    
+    $sunday = (MODULE_PAYMENT_MSP_QWINDO_OPENSUN == 'Open') ? true : false;
+    $monday = (MODULE_PAYMENT_MSP_QWINDO_OPENMON == 'Open') ? true : false;
+    $tuesday = (MODULE_PAYMENT_MSP_QWINDO_OPENTUE == 'Open') ? true : false;
+    $wednesday = (MODULE_PAYMENT_MSP_QWINDO_OPENWED == 'Open') ? true : false;
+    $thursday = (MODULE_PAYMENT_MSP_QWINDO_OPENTHU == 'Open') ? true : false;
+    $friday = (MODULE_PAYMENT_MSP_QWINDO_OPENFRI == 'Open') ? true : false;
+    $saturday = (MODULE_PAYMENT_MSP_QWINDO_OPENSAT == 'Open') ? true : false;
+
+    $shopinfo_array = array
+        (
+        "shipping_countries" => array(
+            $shipping_countries_array
+        ),
+        "allowed_countries" => array(
+            $allowed_countries_array
+        ),
+        "languages" => array(
+            $supported_languages_array
+        ),
+        "stock_updates" => $stock_update_enabled,
+        "supported_currencies" => $supported_currencies_array,
+        "including_tax" => (boolean) MODULE_PAYMENT_MSP_QWINDO_INCL_TAX,
+        "shipping_tax" => array(),
+        "require_shipping" => (boolean) MODULE_PAYMENT_MSP_QWINDO_REQ_SHIP,
+        "base_url" => MODULE_PAYMENT_MSP_QWINDO_URL_BASE,
+        "order_push_url" => MODULE_PAYMENT_MSP_QWINDO_URL_OP,
+        "coc" => MODULE_PAYMENT_MSP_QWINDO_COC,
+        "email" => MODULE_PAYMENT_MSP_QWINDO_STORE_EMAIL,
+        "contact_phone" => MODULE_PAYMENT_MSP_QWINDO_STORE_PHONE,
+        "address" => $street,
+        "housenumber" => $housenumber,
+        "zipcode" => MODULE_PAYMENT_MSP_QWINDO_STORE_ZIP,
+        "city" => MODULE_PAYMENT_MSP_QWINDO_STORE_CITY,
+        "country" => $q->getCountryFromCode(MODULE_PAYMENT_MSP_QWINDO_STORE_COUNTRY),
+        "vat_nr" => MODULE_PAYMENT_MSP_QWINDO_VAT,
+        "terms_and_conditions" => MODULE_PAYMENT_MSP_QWINDO_TOC,
+        "faq" => MODULE_PAYMENT_MSP_QWINDO_FAQ,
+        "open" => MODULE_PAYMENT_MSP_QWINDO_OPEN,
+        "closed" => MODULE_PAYMENT_MSP_QWINDO_CLOSED,
+        "days" => array(
+            "Sunday" => $sunday,
+            "Monday" => $monday,
+            "Tuesday" => $tuesday,
+            "Wednesday" => $wednesday,
+            "Thursday" => $thursday,
+            "Friday" => $friday,
+            "Saturday" => $saturday
+        ),
+        "social" => array(
+            "facebook" => MODULE_PAYMENT_MSP_QWINDO_URL_FB,
+            "twitter" => MODULE_PAYMENT_MSP_QWINDO_URL_TW,
+            "linkedin" => MODULE_PAYMENT_MSP_QWINDO_URL_LI
+        )
+    );
+
+    return $shopinfo_array;
 }
 ?>
 
