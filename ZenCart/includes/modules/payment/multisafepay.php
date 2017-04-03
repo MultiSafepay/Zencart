@@ -116,19 +116,7 @@ if (!class_exists('multisafepay')) {
 
         function pre_confirmation_check()
         {
-            /* if (MODULE_PAYMENT_MULTISAFEPAY_GATEWAY_SELECTION == 'True') 
-              {
-              $gatewaytest = $_POST['multisafepay_gateway_selection'];
-              if(!$gatewaytest)
-              {
-              //$error = 'Selecteer een Gateway';
-              //$payment_error_return = 'payment_error=' . $this->code . '&error=' . urlencode($error);
-              //zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, $payment_error_return, 'SSL', true, false));
-              }
-              $this->gateway_selection = $_POST['multisafepay_gateway_selection'];
-              } else {
-              return false;
-              } */
+
         }
 
         // ---- confirm order ----
@@ -1287,12 +1275,24 @@ if (!class_exists('multisafepay')) {
                 case "iDEAL":
                     return MODULE_PAYMENT_MSP_IDEAL_TEXT_TITLE;
                 case "Banktransfer":
+                case "Virement bancaire":
+                case "Bankoverboeking":
+                case "Banküberweisung":
+                case "Transferencia bancaria":
+                case "Bonifico bancario":
+                case "Transferência Bancária":
                     return MODULE_PAYMENT_MSP_BANKTRANS_TEXT_TITLE;
                 case "Giropay":
                     return MODULE_PAYMENT_MSP_GIROPAY_TEXT_TITLE;
                 case "VISA":
                     return MODULE_PAYMENT_MSP_VISA_TEXT_TITLE;
                 case "Direct Debit":
+                case "Prélèvement automatique":
+                case "Eenmalige machtiging":
+                case "Lastschrift":
+                case "Débito Directo":
+                case "Addebito diretto":
+                case "Débito Direto":
                     return MODULE_PAYMENT_MSP_DIRDEB_TEXT_TITLE;
                 case "Bancontact":
                     return MODULE_PAYMENT_MSP_BANCONTACT_TEXT_TITLE;
@@ -1303,6 +1303,7 @@ if (!class_exists('multisafepay')) {
                 case "Maestro":
                     return MODULE_PAYMENT_MSP_MAESTRO_TEXT_TITLE;
                 case "SOFORT Banking":
+                case "SOFORT Überweisung":
                     return MODULE_PAYMENT_MSP_SOFORT_TEXT_TITLE;
                 case "American Express":
                     return MODULE_PAYMENT_MSP_AMEX_TEXT_TITLE;
@@ -1463,6 +1464,7 @@ if (!class_exists('multisafepay')) {
                     $lang = 'fr_FR';
                     break;
                 case "italian":
+                case "italiano":                    
                     $lang = 'it_IT';
                     break;
                 case "portuguese":

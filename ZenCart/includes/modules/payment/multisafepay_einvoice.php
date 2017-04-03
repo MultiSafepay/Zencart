@@ -1534,6 +1534,7 @@ class multisafepay_einvoice {
                 $lang = 'fr_FR';
                 break;
             case "italian":
+            case "italiano":                
                 $lang = 'it_IT';
                 break;
             case "portuguese":

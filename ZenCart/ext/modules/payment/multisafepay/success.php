@@ -66,8 +66,6 @@ if (empty($_GET['transactionid'])) {
 
     include_once("includes/languages/english/modules/payment/" . $_SESSION['payment'] . ".php");
 
-
-    
     $GLOBALS[$_SESSION['payment']] = $payment_module;
     
     if(isset($payment_module->msp->orders->data->payment_details->type))
