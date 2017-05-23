@@ -1,7 +1,6 @@
 <?php
 
-$dir = dirname(dirname(dirname(dirname(__FILE__))));
-require_once($dir . "/mspcheckout/API/Autoloader.php");
+require_once(DIR_FS_CATALOG . "mspcheckout/API/Autoloader.php");
 
 class multisafepay_payafter {
 

@@ -1,8 +1,6 @@
 <?php
 
-$dir = dirname(dirname(dirname(dirname(__FILE__))));
-
-require_once($dir . "/mspcheckout/API/Autoloader.php");
+require_once(DIR_FS_CATALOG . "mspcheckout/API/Autoloader.php");
 
 class multisafepay_einvoice {
 
@@ -66,20 +64,25 @@ class multisafepay_einvoice {
      * @param type $admin
      * @return type
      */
+
     function getTitle($admin = 'title')
     {
-        $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
+
+        if (MODULE_PAYMENT_MULTISAFEPAY_TITLES_ICON_DISABLED != 'False') {
+
+            $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
+        } else {
+            $title = "";
+        }
 
         $title .= ($this->checkView() == "admin") ? "MultiSafepay - " : "";
         if ($admin && $this->checkView() == "admin") {
             $title .= $admin;
         } else {
-
             $title .= $this->getLangStr($admin);
         }
-
         return $title;
-    }
+    }    
 
     /**
      * 

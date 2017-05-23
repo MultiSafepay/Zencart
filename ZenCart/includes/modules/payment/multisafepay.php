@@ -1,7 +1,6 @@
 <?php
 
-$dir = dirname(dirname(dirname(dirname(__FILE__))));
-require_once($dir . "/mspcheckout/API/Autoloader.php");
+require_once(DIR_FS_CATALOG . "mspcheckout/API/Autoloader.php");
 
 if (!class_exists('multisafepay')) {
 
@@ -139,7 +138,7 @@ if (!class_exists('multisafepay')) {
 
         function process_button()
         {
-            return zen_draw_hidden_field('msp_paymentmethod', 'CONNECT');            
+            return zen_draw_hidden_field('msp_paymentmethod', '');            
         }
 
         // ---- process payment ----
@@ -1339,7 +1338,7 @@ if (!class_exists('multisafepay')) {
                 case "Good Card":
                     return MODULE_PAYMENT_MSP_GOODCARD_TEXT_TITLE;
                 case "GezondheidsBon":
-                    return MODULE_PAYMENT_MSP_GEZONDHEIDSBON_TEXT_TITLE;
+                    return MODULE_PAYMENT_MSP_WEBSHOPGIFTCARD_TEXT_TITLE;
                 case "Webshop Giftcard":
                     return MODULE_PAYMENT_MSP_GEZONDHEIDSBON_TEXT_TITLE;
                 case "Wijn Cadeaukaart":

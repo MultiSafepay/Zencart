@@ -57,7 +57,7 @@ class multisafepay_paysafecard extends multisafepay {
 
     function process_button()
     {
-        return zen_draw_hidden_field('msp_paymentmethod', 'PAYSAFECARD');
+        return zen_draw_hidden_field('msp_paymentmethod', 'PSAFECARD');
     }
 
     /*

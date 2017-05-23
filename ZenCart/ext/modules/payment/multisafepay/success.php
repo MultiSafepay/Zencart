@@ -78,6 +78,11 @@ if (empty($_GET['transactionid'])) {
     $status = $payment_module->checkout_notify();
 }
 
+if(!isset($_SESSION['customer_id']))
+{
+	$_SESSION['customer_id']	=	$customer_id;
+} 
+
 if ($_SESSION['customer_id']) {
     zen_redirect(zen_href_link(FILENAME_CHECKOUT_SUCCESS, '', 'SSL'));
 } else {
