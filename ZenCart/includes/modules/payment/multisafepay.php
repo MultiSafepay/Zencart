@@ -311,7 +311,7 @@ if (!class_exists('multisafepay')) {
                     "payment_options" => array(
                         "notification_url" => $this->_href_link('ext/modules/payment/multisafepay/notify_checkout.php?type=initial&', '', 'NONSSL', false, false),
                         "redirect_url" => $redirect_url,
-                        "cancel_url" => $this->_href_link('ext/modules/payment/multisafepay/cancel.php'), //zen_href_link(FILENAME_CHECKOUT_PAYMENT),
+                        "cancel_url" => $this->_href_link('ext/modules/payment/multisafepay/cancel.php'),
                         "close_window" => true
                     ),
                     "customer" => $customer_data,
@@ -333,7 +333,6 @@ if (!class_exists('multisafepay')) {
 
                 if ($gateway == 'BANKTRANS' && $trans_type == 'direct') {
                     zen_redirect(zen_href_link(FILENAME_CHECKOUT_SUCCESS, '', 'SSL'));
-                    //Or rather ?= zen_redirect(zen_href_link('index'));
                 } else {
                     return $this->msp->orders->getPaymentLink();
                 }
@@ -1338,9 +1337,9 @@ if (!class_exists('multisafepay')) {
                 case "Good Card":
                     return MODULE_PAYMENT_MSP_GOODCARD_TEXT_TITLE;
                 case "GezondheidsBon":
-                    return MODULE_PAYMENT_MSP_WEBSHOPGIFTCARD_TEXT_TITLE;
-                case "Webshop Giftcard":
                     return MODULE_PAYMENT_MSP_GEZONDHEIDSBON_TEXT_TITLE;
+                case "Webshop Giftcard":
+                    return MODULE_PAYMENT_MSP_WEBSHOPGIFTCARD_TEXT_TITLE;
                 case "Wijn Cadeaukaart":
                     return MODULE_PAYMENT_MSP_WIJNCADEAU_TEXT_TITLE;
                 case "Lief! Kadokaart":
