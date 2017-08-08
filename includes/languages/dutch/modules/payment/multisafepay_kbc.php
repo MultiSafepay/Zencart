@@ -1,0 +1,5 @@
+<?php
+
+define('MODULE_PAYMENT_MSP_KBC_TEXT_TITLE', 'KBC');
+define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'bij');
+?>
