@@ -1329,7 +1329,7 @@ if (!class_exists('multisafepay')) {
                     return MODULE_PAYMENT_MSP_PAYSAFECARD_TEXT_TITLE;
                 case "Belfius":
                     return MODULE_PAYMENT_MSP_BELFIUS_TEXT_TITLE;
-                case "ING HomePay":
+                case "ING Home'Pay":
                     return MODULE_PAYMENT_MSP_ING_TEXT_TITLE;
                 case "KBC":
                     return MODULE_PAYMENT_MSP_KBC_TEXT_TITLE;                    

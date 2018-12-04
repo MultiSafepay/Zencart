@@ -39,7 +39,7 @@ class multisafepay_ing extends multisafepay
         $this->code = 'multisafepay_ing';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_ING_TEXT_TITLE);
         $this->public_title = $this->getTitle(MODULE_PAYMENT_MSP_ING_TEXT_TITLE);
-        $this->description = $this->description = "<img src='images/icon_info.gif' border='0'>&nbsp;<b>MultiSafepay ING Homepay</b><BR>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<BR>";
+        $this->description = $this->description = "<img src='images/icon_info.gif' border='0'>&nbsp;<b>MultiSafepay ING Home'Pay</b><BR>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<BR>";
         $this->enabled = MODULE_PAYMENT_MSP_ING_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_ING_SORT_ORDER;
 
@@ -104,7 +104,7 @@ class multisafepay_ing extends multisafepay
     function install()
     {
         global $db;
-        $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable MultiSafepay ING Module', 'MODULE_PAYMENT_MSP_ING_STATUS', 'True', 'Do you want to accept ING payments?', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+        $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable MultiSafepay ING Home&apos;Pay Module', 'MODULE_PAYMENT_MSP_ING_STATUS', 'True', 'Do you want to accept ING Home&apos;Pay payments?', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
         $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Sort order of display.', 'MODULE_PAYMENT_MSP_ING_SORT_ORDER', '0', 'Sort order of display. Lowest is displayed first.', '6', '0', now())");
         $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) values ('Payment Zone', 'MODULE_PAYMENT_MSP_ING_ZONE', '0', 'If a zone is selected, only enable this payment method for that zone.', '6', '3', 'zen_get_zone_class_title', 'zen_cfg_pull_down_zone_classes(', now())");
     }
