@@ -79,8 +79,7 @@ class multisafepay_ing extends multisafepay
 
     function process_button()
     {
-
-        return zen_draw_hidden_field('msp_paymentmethod', 'ING');
+        return zen_draw_hidden_field('msp_paymentmethod', 'INGHOME');
     }
 
     /*
