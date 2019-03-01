@@ -78,7 +78,7 @@ class multisafepay_ideal extends multisafepay
             $output = '<div class="idealbox" style="padding:20px;border:1px solid #d50172; margin-top:20px;text-align:center">';
             $output .= '<img src="images/multisafepay/en/ideal-big.png" border="0" width="113" height="88"/><br /><br />';
             $output .= "<select name='msp_issuer' style='width:164px; padding: 2px; margin-left: 7px;'>";
-            $output .='<option>Select your bank</option>';
+            $output .='<option value="">Select your bank</option>';
 
             foreach ($ideal_issuers as $issuer) {
                 $output .= '<option value="' . $issuer->code . '">' . $issuer->description . '</option>';
