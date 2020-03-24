@@ -745,7 +745,7 @@ if (!class_exists('multisafepay')) {
                 'billing_state' => $order->billing['state'],
                 'billing_country' => $order->billing['country']['title'],
                 'billing_address_format_id' => $order->billing['format_id'],
-                'payment_method' => $order->info['payment_method'],
+                'payment_method' => strip_tags($order->info['payment_method']),
                 'payment_module_code' => $order->info['payment_module_code'],
                 'coupon_code' => $order->info['coupon_code'],
                 'cc_type' => $order->info['cc_type'],
