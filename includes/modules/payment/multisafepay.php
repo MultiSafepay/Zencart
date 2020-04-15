@@ -62,12 +62,7 @@ if (!class_exists('multisafepay')) {
             if (is_object($order)) {
                 $this->update_status();
             }
-
-            if (MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live' || MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live account') {
-                $this->api_url = 'https://api.multisafepay.com/v1/json/';
-            } else {
-                $this->api_url = 'https://testapi.multisafepay.com/v1/json/';
-            }
+            $this->api_url = $this->get_api_url();
 
             $this->order_id = $order_id;
             $this->public_title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE);
@@ -307,11 +302,7 @@ if (!class_exists('multisafepay')) {
             try {
                 $this->msp = new MultiSafepayAPI\Client();
 
-                if (MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live' || MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live account') {
-                    $this->api_url = 'https://api.multisafepay.com/v1/json/';
-                } else {
-                    $this->api_url = 'https://testapi.multisafepay.com/v1/json/';
-                }
+                $this->api_url = $this->get_api_url();
 
                 $this->msp->setApiUrl($this->api_url);
                 $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
@@ -428,11 +419,7 @@ if (!class_exists('multisafepay')) {
             try {
                 $this->msp = new MultiSafepayAPI\Client();
 
-                if (MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live' || MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live account') {
-                    $this->api_url = 'https://api.multisafepay.com/v1/json/';
-                } else {
-                    $this->api_url = 'https://testapi.multisafepay.com/v1/json/';
-                }
+                $this->api_url = $this->get_api_url();
 
                 $this->msp->setApiUrl($this->api_url);
                 $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
@@ -463,11 +450,7 @@ if (!class_exists('multisafepay')) {
             try {
                 $this->msp = new MultiSafepayAPI\Client();
 
-                if (MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live' || MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live account') {
-                    $this->api_url = 'https://api.multisafepay.com/v1/json/';
-                } else {
-                    $this->api_url = 'https://testapi.multisafepay.com/v1/json/';
-                }
+                $this->api_url = $this->get_api_url();
 
                 $this->msp->setApiUrl($this->api_url);
                 $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
@@ -1517,7 +1500,62 @@ if (!class_exists('multisafepay')) {
             }
         }
 
-    }
 
+        /**
+         * call setTransactionStatusToShipped if orderstatus is set to Delivered (3)
+         *
+         * @param $order_id
+         * @param $status
+         * @param $comments
+         * @param $customer_notified
+         * @param $check_status
+         */
+        public function _doStatusUpdate($order_id, $status, $comments, $customer_notified, $check_status)
+        {
+            if ($status === 3) {
+                $this->setTransactionStatusToShipped($order_id);
+            }
+            return;
+        }
+
+        /**
+         * @param $order_id
+         */
+        private function setTransactionStatusToShipped ($order_id){
+            try {
+                $msp = new MultiSafepayAPI\Client();
+                $api_url = $this->get_api_url();
+
+                $msp->setApiUrl($api_url);
+                $msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
+
+                $endpoint = 'orders/' . $order_id;
+                $setShipping = array(
+                    'tracktrace_code' => null,
+                    'carrier'         => null,
+                    'status'          => 'shipped',
+                    'ship_date'       => date('Y-m-d H:i:s'),
+                    'reason'          => 'Shipped');
+
+                $msp->orders->patch($setShipping, $endpoint);
+            } catch (Exception $e) {
+                $this->_error_redirect(htmlspecialchars($e->getMessage()));
+                die;
+            }
+        }
+
+        /**
+         * @return string
+         */
+        public function get_api_url()
+        {
+            if (strncmp(MODULE_PAYMENT_MULTISAFEPAY_API_SERVER, 'Live', 4) === 0) {
+                return 'https://api.multisafepay.com/v1/json/';
+            } else {
+                return 'https://testapi.multisafepay.com/v1/json/';
+            }
+        }
+
+    }
 }
 ?>
