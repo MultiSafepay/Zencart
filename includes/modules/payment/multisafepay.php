@@ -132,7 +132,7 @@ if (!class_exists('multisafepay')) {
 
         function pre_confirmation_check()
         {
-            
+
         }
 
         // ---- confirm order ----
@@ -189,18 +189,20 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @return type
          */
         function _start_transaction()
         {
+            $order = $GLOBALS['order'];
+
             $items = "<ul>\n";
-            foreach ($GLOBALS['order']->products as $product) {
+            foreach ($order->products as $product) {
                 $items .= "<li>" . $product['name'] . "</li>\n";
             }
             $items .= "</ul>\n";
 
-            $amount = round($GLOBALS['order']->info['total'], 2) * 100;
+            $amount = round($order->info['total'], 2) * 100;
 
             if ($_POST['msp_paymentmethod']) {
                 $gateway = $_POST['msp_paymentmethod'];
@@ -235,67 +237,67 @@ if (!class_exists('multisafepay')) {
                 $ext_var3 = $_SESSION['sendto'];
             }
 
-            if (isset($GLOBALS['order']->customer['firstname'])) {
-                list($cust_street, $cust_housenumber) = $this->parseAddress($GLOBALS['order']->customer['street_address']);
-                $locale = strtolower($GLOBALS['order']->customer['country']['iso_code_2']) . '_' . $GLOBALS['order']->customer['country']['iso_code_2'];
+            if (isset($order->customer['firstname'])) {
+                list($cust_street, $cust_housenumber) = $this->parseAddress($order->customer['street_address']);
+                $locale = strtolower($order->customer['country']['iso_code_2']) . '_' . $order->customer['country']['iso_code_2'];
 
                 $customer_data = array(
                     "locale" => $locale,
                     "ip_address" => $_SERVER['REMOTE_ADDR'],
                     "forwarded_ip" => $_SERVER['HTTP_X_FORWARDED_FOR'],
-                    "first_name" => $GLOBALS['order']->customer['firstname'],
-                    "last_name" => $GLOBALS['order']->customer['lastname'],
+                    "first_name" => $order->customer['firstname'],
+                    "last_name" => $order->customer['lastname'],
                     "address1" => $cust_street,
                     "address2" => null,
                     "house_number" => $cust_housenumber,
-                    "zip_code" => $GLOBALS['order']->customer['postcode'],
-                    "city" => $GLOBALS['order']->customer['city'],
-                    "state" => $GLOBALS['order']->customer['state'],
-                    "country" => $GLOBALS['order']->customer['country']['iso_code_2'],
-                    "phone" => $GLOBALS['order']->customer['telephone'],
-                    "email" => $GLOBALS['order']->customer['email_address'],
+                    "zip_code" => $order->customer['postcode'],
+                    "city" => $order->customer['city'],
+                    "state" => $order->customer['state'],
+                    "country" => $order->customer['country']['iso_code_2'],
+                    "phone" => $order->customer['telephone'],
+                    "email" => $order->customer['email_address'],
                     "disable_send_email" => false,
                     "user_agent" => $_SERVER['HTTP_USER_AGENT'],
                     "referrer" => $_SERVER['HTTP_REFERER']
                 );
             } else {
-                list($billing_street, $billing_housenumber) = $this->parseAddress($GLOBALS['order']->billing['street_address']);
-                $locale = strtolower($GLOBALS['order']->billing['country']['iso_code_2']) . '_' . $GLOBALS['order']->billing['country']['iso_code_2'];
+                list($billing_street, $billing_housenumber) = $this->parseAddress($order->billing['street_address']);
+                $locale = strtolower($order->billing['country']['iso_code_2']) . '_' . $order->billing['country']['iso_code_2'];
 
                 $customer_data = array(
                     "locale" => $locale,
                     "ip_address" => $_SERVER['REMOTE_ADDR'],
                     "forwarded_ip" => $_SERVER['HTTP_X_FORWARDED_FOR'],
-                    "first_name" => $GLOBALS['order']->billing['firstname'],
-                    "last_name" => $GLOBALS['order']->billing['lastname'],
+                    "first_name" => $order->billing['firstname'],
+                    "last_name" => $order->billing['lastname'],
                     "address1" => $billing_street,
                     "address2" => null,
                     "house_number" => $billing_housenumber,
-                    "zip_code" => $GLOBALS['order']->billing['postcode'],
-                    "city" => $GLOBALS['order']->billing['city'],
-                    "state" => $GLOBALS['order']->billing['state'],
-                    "country" => $GLOBALS['order']->billing['country']['iso_code_2'],
-                    "phone" => $GLOBALS['order']->customer['telephone'],
-                    "email" => $GLOBALS['order']->customer['email_address'],
+                    "zip_code" => $order->billing['postcode'],
+                    "city" => $order->billing['city'],
+                    "state" => $order->billing['state'],
+                    "country" => $order->billing['country']['iso_code_2'],
+                    "phone" => $order->customer['telephone'],
+                    "email" => $order->customer['email_address'],
                     "disable_send_email" => false,
                     "user_agent" => $_SERVER['HTTP_USER_AGENT'],
                     "referrer" => $_SERVER['HTTP_REFERER']
                 );
             }
 
-            if (isset($GLOBALS['order']->delivery['firstname'])) {
-                list($delivery_street, $delivery_housenumber) = $this->parseAddress($GLOBALS['order']->delivery['street_address']);
+            if (isset($order->delivery['firstname'])) {
+                list($delivery_street, $delivery_housenumber) = $this->parseAddress($order->delivery['street_address']);
 
                 $delivery_data = array(
-                    "first_name" => $GLOBALS['order']->delivery['firstname'],
-                    "last_name" => $GLOBALS['order']->delivery['lastname'],
+                    "first_name" => $order->delivery['firstname'],
+                    "last_name" => $order->delivery['lastname'],
                     "address1" => $delivery_street,
                     "address2" => null,
                     "house_number" => $delivery_housenumber,
-                    "zip_code" => $GLOBALS['order']->delivery['postcode'],
-                    "city" => $GLOBALS['order']->delivery['city'],
-                    "state" => $GLOBALS['order']->delivery['state'],
-                    "country" => $GLOBALS['order']->delivery['country']['iso_code_2'],
+                    "zip_code" => $order->delivery['postcode'],
+                    "city" => $order->delivery['city'],
+                    "state" => $order->delivery['state'],
+                    "country" => $order->delivery['country']['iso_code_2'],
                 );
             }
 
@@ -310,7 +312,7 @@ if (!class_exists('multisafepay')) {
                 $this->msp->orders->post(array(
                     "type" => $trans_type,
                     "order_id" => $this->order_id,
-                    "currency" => $GLOBALS['order']->info['currency'],
+                    "currency" => $order->info['currency'],
                     "amount" => round($amount),
                     "gateway" => $gateway,
                     "description" => "Order #" . $this->order_id . " " . MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT . " " . STORE_NAME,
@@ -331,6 +333,9 @@ if (!class_exists('multisafepay')) {
                     "gateway_info" => array(
                         "issuer_id" => $selected_issuer
                     ),
+                    "shopping_cart" => $this->getShoppingCart($order),
+                    "checkout_options" => $this->getCheckoutOptions(),
+
                     "google_analytics" => array(
                         "account" => MODULE_PAYMENT_MULTISAFEPAY_GA
                     ),
@@ -354,8 +359,180 @@ if (!class_exists('multisafepay')) {
             }
         }
 
+
+
         /**
-         * 
+         * Fetches the items and related data, and builds the $shoppingcart_array
+         *
+         * @global type $order
+         * @return type array
+         */
+        function getShoppingCart($order)
+        {
+            $shoppingcart_array = array();
+
+            foreach ($order->products as $product) {
+                $price = $product['price'];
+                if (isset($product['final_price'])) {
+                    $price = $product['final_price'];
+                }
+
+                $attributeString = '';
+                if (!empty($product['attributes'])) {
+                    foreach ($product['attributes'] as $attribute) {
+                        $attributeString .= $attribute['option'] . ' ' . $attribute['value'] . ', ';
+                    }
+                    $attributeString = substr($attributeString, 0, -2);
+                    $attributeString = ' (' . $attributeString . ')';
+                }
+
+                $shoppingcart_array['items'][] = array(
+                    "name" => $product['name'] . $attributeString,
+                    "description" => $product['model'],
+                    "unit_price" => $price,
+                    "quantity" => $product['qty'],
+                    "merchant_item_id" => $product['id'],
+                    "tax_table_selector" => $product['tax_description'],
+                    "weight" => array(
+                        "unit" => "KG",
+                        "value" => $product['weight']
+                    )
+                );
+            }
+
+            if (isset($order->info['shipping_method'])) {
+                $shoppingcart_array['items'][] = array(
+                    "name" => $order->info['shipping_method'],
+                    "description" => $order->info['shipping_method'],
+                    "unit_price" => $order->info['shipping_cost'],
+                    "quantity" => 1,
+                    "merchant_item_id" => 'msp-shipping',
+                    "tax_table_selector" => current(array_keys($order->info['tax_groups'])),
+                    "weight" => array(
+                        "unit" => "KG",
+                        "value" => 0
+                    )
+                );
+            }
+
+            if (isset($GLOBALS['ot_coupon']->deduction)) {
+                if ($GLOBALS['ot_coupon']->deduction != '') {
+                    if ($GLOBALS['ot_coupon']->include_tax != "true") {
+                        $this->_error_redirect("The option \"Include Tax\" must be enabled under Modules > Order Total, when processing discounts.");
+                    }
+
+                    $shoppingcart_array['items'][] = array(
+                        "name" => $GLOBALS['ot_coupon']->title,
+                        "description" => $GLOBALS['ot_coupon']->header,
+                        "unit_price" => -$GLOBALS['ot_coupon']->deduction,
+                        "quantity" => 1,
+                        "merchant_item_id" => $GLOBALS['ot_coupon']->code,
+                        "tax_table_selector" => "BTW0",
+                        "weight" => array(
+                            "unit" => "KG",
+                            "value" => 0
+                        )
+                    );
+                }
+            }
+            return $shoppingcart_array;
+        }
+
+        /**
+         * Fetches the items and related data, and builds the $checkoutoptions_array
+         *
+         * @global type $order
+         * @return array
+         */
+        function getCheckoutOptions()
+        {
+            global $order;
+
+            $checkoutoptions_array = array();
+            $checkoutoptions_array['use_shipping_notification'] = false;
+
+            $checkoutoptions_array['tax_tables'] = array(
+                "alternate" => array()
+            );
+
+            foreach ($order->products as $product) {
+                if ($product['tax_description'] != 'Unknown tax rate' || $product['tax_description'] != 'Sales Tax') {
+                    if (!$this->in_array_recursive(key($product['tax_groups']), $checkoutoptions_array['tax_tables']['alternate'])) {
+                        $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                            "standalone" => false,
+                            "name" => $product['tax_description'],
+                            "rules" => array(array
+                            (
+                                "rate" => current($product['tax_groups']) / 100
+                            ))
+                        );
+                    }
+                } else {
+                    if (!$this->in_array_recursive(key($product['tax_groups']), $checkoutoptions_array['tax_tables']['alternate'])) {
+                        $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                            "standalone" => false,
+                            "name" => "BTW0",
+                            "rules" => array(array
+                            (
+                                "rate" => 0.00
+                            ))
+                        );
+                    }
+                }
+            }
+
+            //if (!$this->in_array_recursive(key($product['tax_groups']), $checkoutoptions_array['tax_tables']['alternate'])) {
+            $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                "standalone" => false,
+                "name" => "BTW0",
+                "rules" => array(array
+                (
+                    "rate" => 0.00
+                ))
+            );
+            //}
+
+
+            if ($order->info['shipping_cost'] != '0.00') {
+                if ($this->in_array_recursive(current(array_keys($order->info['tax_groups'])), $checkoutoptions_array['tax_tables']['alternate'])) {
+                    $tax_percentage = $order->info['shipping_tax'] / ( $order->info['shipping_cost'] / 100);
+                    $tax_percentage = $tax_percentage / 100;
+
+                    $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                        "standalone" => false,
+                        "name" => current(array_keys($order->info['tax_groups'])),
+                        "rules" => array(array
+                        (
+                            "rate" => $tax_percentage
+                        ))
+                    );
+                }
+            }
+
+            return $checkoutoptions_array;
+        }
+
+        /**
+         *
+         * @param type $needle
+         * @param type $haystack
+         * @param type $strict
+         * @return boolean
+         */
+        function in_array_recursive($needle, $haystack, $strict = false)
+        {
+            foreach ($haystack as $item) {
+                if (($strict ? $item === $needle : $item == $needle) || (is_array($item) && $this->in_array_recursive($needle, $item, $strict))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+
+        /**
+         *
          * @param type $street_address
          * @return type
          */
@@ -387,7 +564,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @param type $haystack
          * @param type $needle
          * @param type $offset
@@ -411,7 +588,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @return type
          */
         function check_transaction()
@@ -434,7 +611,7 @@ if (!class_exists('multisafepay')) {
 
         /**
          * Checks current order status and updates the database
-         * 
+         *
          * @global type $db
          * @global type $order
          * @global type $currencies
@@ -602,9 +779,9 @@ if (!class_exists('multisafepay')) {
 
             foreach ($order->products as $product) {
                 $order->products_ordered .= $product['qty'] . ' x ' . $product['name'] . ($product['model'] != '' ? ' (' . $product['model'] . ') ' : '') . ' = ' .
-                        $currencies->display_price($product['final_price'], $product['tax'], $product['qty']) .
-                        ($product['onetime_charges'] != 0 ? "\n" . TEXT_ONETIME_CHARGES_EMAIL . $currencies->display_price($product['onetime_charges'], $product['tax'], 1) : '') .
-                        $order->products_ordered_attributes . "\n";
+                    $currencies->display_price($product['final_price'], $product['tax'], $product['qty']) .
+                    ($product['onetime_charges'] != 0 ? "\n" . TEXT_ONETIME_CHARGES_EMAIL . $currencies->display_price($product['onetime_charges'], $product['tax'], 1) : '') .
+                    $order->products_ordered_attributes . "\n";
                 $i++;
             }
 
@@ -646,7 +823,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @param type $error
          */
         function _error_redirect($error)
@@ -659,7 +836,7 @@ if (!class_exists('multisafepay')) {
 
         /**
          * Store the order in the database, and set $this->order_id
-         * 
+         *
          * @global type $customers_id
          * @global type $languages_id
          * @global type $order
@@ -850,7 +1027,7 @@ if (!class_exists('multisafepay')) {
                                  pa.attributes_price_letters, pa.attributes_price_letters_free,
                                  pad.products_attributes_maxdays, pad.products_attributes_maxcount, pad.products_attributes_filename
                                  from " . TABLE_PRODUCTS_OPTIONS . " popt, " . TABLE_PRODUCTS_OPTIONS_VALUES . " poval, " .
-                                    TABLE_PRODUCTS_ATTRIBUTES . " pa
+                                TABLE_PRODUCTS_ATTRIBUTES . " pa
                                   left join " . TABLE_PRODUCTS_ATTRIBUTES_DOWNLOAD . " pad
                                   on pa.products_attributes_id=pad.products_attributes_id
                                  where pa.products_id = '" . zen_db_input($order->products[$i]['id']) . "'
@@ -936,7 +1113,7 @@ if (!class_exists('multisafepay')) {
 
         /**
          * Ripped from includes/functions/general.php
-         * 
+         *
          * @param type $address_format_id
          * @param string $address
          * @param type $html
@@ -1018,7 +1195,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @param type $string
          * @param type $translate
          * @param type $protected
@@ -1038,7 +1215,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @param type $string
          * @return type
          */
@@ -1048,7 +1225,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @param type $data
          * @param type $parse
          * @return type
@@ -1059,7 +1236,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @global type $request_type
          * @global type $session_started
          * @global type $SID
@@ -1220,7 +1397,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @global type $PHP_SELF
          * @return type
          */
@@ -1232,7 +1409,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @param type $admin
          * @return type
          */
@@ -1257,7 +1434,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @param type $str
          * @return type
          */
@@ -1315,7 +1492,7 @@ if (!class_exists('multisafepay')) {
                 case "ING Home'Pay":
                     return MODULE_PAYMENT_MSP_ING_TEXT_TITLE;
                 case "KBC":
-                    return MODULE_PAYMENT_MSP_KBC_TEXT_TITLE;                    
+                    return MODULE_PAYMENT_MSP_KBC_TEXT_TITLE;
                 //Giftcards
                 case "Beauty & Wellness Cadeau":
                     return MODULE_PAYMENT_MSP_BEAUTYANDWELLNESS_TEXT_TITLE;
@@ -1379,7 +1556,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @return string
          */
         function checkView()
@@ -1398,7 +1575,7 @@ if (!class_exists('multisafepay')) {
 
         /**
          * Generate the payment method icon
-         * 
+         *
          * @param type $icon
          * @return type
          */
@@ -1408,7 +1585,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @return string
          */
         function getIcon()
@@ -1421,7 +1598,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @global type $db
          * @global type $languages_id
          * @param type $savedSetting
@@ -1447,7 +1624,7 @@ if (!class_exists('multisafepay')) {
 
         /**
          * Return locale language code based on $lang provided
-         * 
+         *
          * @param type $lang
          * @return string
          */
@@ -1485,7 +1662,7 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * 
+         *
          * @param type $country
          * @return type
          */
