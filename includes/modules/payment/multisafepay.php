@@ -1495,6 +1495,9 @@ if (!class_exists('multisafepay')) {
                     return MODULE_PAYMENT_MSP_KBC_TEXT_TITLE;
                 case "Alipay":
                     return MODULE_PAYMENT_MSP_ALIPAY_TEXT_TITLE;
+                case "Trustly":
+                    return MODULE_PAYMENT_MSP_TRUSTLY_TEXT_TITLE;
+
                 //Giftcards
                 case "Beauty & Wellness Cadeau":
                     return MODULE_PAYMENT_MSP_BEAUTYANDWELLNESS_TEXT_TITLE;

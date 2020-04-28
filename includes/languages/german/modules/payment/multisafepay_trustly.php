@@ -1,0 +1,5 @@
+<?php
+
+define('MODULE_PAYMENT_MSP_TRUSTLY_TEXT_TITLE', 'Trustly');
+define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'bei');
+?>
