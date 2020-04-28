@@ -1442,6 +1442,8 @@ if (!class_exists('multisafepay')) {
         {
             switch ($str) {
                 //Payment methods
+                case "AfterPay":
+                    return MODULE_PAYMENT_MSP_AFTERPAY_TEXT_TITLE;
                 case "title":
                     return MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE;
                 case "iDEAL":
@@ -1553,7 +1555,6 @@ if (!class_exists('multisafepay')) {
                     return MODULE_PAYMENT_MSP_TUINBON_TEXT_TITLE;
                 case "Wellness Giftcard":
                     return MODULE_PAYMENT_MSP_WELLNESS_TEXT_TITLE;
-
                 case MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE:
                     return MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE;
                     break;
