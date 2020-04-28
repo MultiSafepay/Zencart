@@ -39,7 +39,7 @@ class multisafepay_visa extends multisafepay
         $this->code = 'multisafepay_visa';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_VISA_TEXT_TITLE);
         $this->public_title = $this->getTitle(MODULE_PAYMENT_MSP_VISA_TEXT_TITLE);
-        $this->description = $this->description = "<img src='images/icon_info.gif' border='0'>&nbsp;<b>MultiSafepay VISA</b><BR>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<BR>";
+        $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
         $this->enabled = MODULE_PAYMENT_MSP_VISA_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_VISA_SORT_ORDER;
 

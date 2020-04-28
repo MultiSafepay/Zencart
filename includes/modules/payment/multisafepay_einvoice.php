@@ -31,7 +31,7 @@ class multisafepay_einvoice
     var $description;
     var $enabled;
     var $sort_order;
-    var $plugin_ver = "ZenCart 3.0.0";
+    var $plugin_ver = "3.0.0";
     var $icon = "einvoice.png";
     var $api_url;
     var $order_id;
@@ -50,7 +50,7 @@ class multisafepay_einvoice
 
         $this->code = 'multisafepay_einvoice';
         $this->title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_EINVOICE_TEXT_TITLE);
-        $this->description = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_EINVOICE_TEXT_TITLE);
+        $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
         $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_EINVOICE_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MULTISAFEPAY_EINVOICE_SORT_ORDER;
         $this->order_status = MODULE_PAYMENT_MULTISAFEPAY_EINVOICE_ORDER_STATUS_ID_INITIALIZED;

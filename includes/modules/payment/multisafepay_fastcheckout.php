@@ -31,7 +31,7 @@ class multisafepay_fastcheckout
     var $description;
     var $enabled;
     var $sort_order;
-    var $plugin_ver = "ZenCart 3.0.0";
+    var $plugin_ver = "3.0.0";
     var $api_url;
     var $order_id;
     var $public_title;
@@ -52,6 +52,8 @@ class multisafepay_fastcheckout
 
         $this->code = 'multisafepay_fastcheckout';
         $this->title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_FCO_TEXT_TITLE);
+        $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
+
         $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_FCO_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MULTISAFEPAY_FCO_SORT_ORDER;
         $this->order_status = MODULE_PAYMENT_MULTISAFEPAY_FCO_ORDER_STATUS_ID_INITIALIZED;
