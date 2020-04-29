@@ -1179,6 +1179,11 @@ class multisafepay_fastcheckout
 
         $order_status_query = $db->Execute("SELECT orders_status_name FROM " . TABLE_ORDERS_STATUS . " WHERE orders_status_id = '" . $GLOBALS['order']->info['order_status'] . "' AND language_id = '" . $GLOBALS['languages_id'] . "'");
         $order_status = $order_status_query;
+
+        if ($new_stat == 0){
+            $new_stat = DEFAULT_ORDERS_STATUS_ID;
+        }
+
         $GLOBALS['order']->info['orders_status'] = $order_status->fields['orders_status_name'];
 
         if ($old_order_status != $new_stat) {
