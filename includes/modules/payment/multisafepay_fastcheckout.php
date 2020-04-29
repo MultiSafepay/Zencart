@@ -659,7 +659,7 @@ class multisafepay_fastcheckout
     {
         $items = "<ul>\n";
         foreach ($GLOBALS['order']->products as $product) {
-            $items .= "<li>" . $product['name'] . "</li>\n";
+            $items .= "<li>" . $product['qty'] . 'x ' . $product['name'] . "</li>\n";
         }
         $items .= "</ul>\n";
 

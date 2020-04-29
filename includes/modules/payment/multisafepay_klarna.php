@@ -339,7 +339,7 @@ class multisafepay_klarna
     {
         $items_list = "<ul>\n";
         foreach ($GLOBALS['order']->products as $product) {
-            $items_list .= "<li>" . $product['name'] . "</li>\n";
+            $items_list .= "<li>" . $product['qty'] . 'x ' . $product['name'] . "</li>\n";
         }
         $items_list .= "</ul>\n";
 
