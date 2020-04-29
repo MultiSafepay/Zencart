@@ -1526,8 +1526,6 @@ if (!class_exists('multisafepay')) {
                     return MODULE_PAYMENT_MSP_DGSGW_TEXT_TITLE;
                 case "Brouwmarkt":
                     return MODULE_PAYMENT_MSP_BROUWMARKT_TEXT_TITLE;
-                case "Nationale Erotiekbon":
-                    return MODULE_PAYMENT_MSP_EROTIEKBON_TEXT_TITLE;
                 case "Fietsenbon":
                     return MODULE_PAYMENT_MSP_FIETSENBON_TEXT_TITLE;
                 case "GivaCard":
@@ -1540,20 +1538,14 @@ if (!class_exists('multisafepay')) {
                     return MODULE_PAYMENT_MSP_WEBSHOPGIFTCARD_TEXT_TITLE;
                 case "Wijn Cadeaukaart":
                     return MODULE_PAYMENT_MSP_WIJNCADEAU_TEXT_TITLE;
-                case "Lief! Kadokaart":
-                    return MODULE_PAYMENT_MSP_LIEF_TEXT_TITLE;
                 case "Podium":
                     return MODULE_PAYMENT_MSP_PODIUM_TEXT_TITLE;
-                case "Lief! Kadokaart":
-                    return MODULE_PAYMENT_MSP_LIEF_TEXT_TITLE;
                 case "YourGift":
                     return MODULE_PAYMENT_MSP_YOURGIFT_TEXT_TITLE;
                 case "Winkel Cheque":
                     return MODULE_PAYMENT_MSP_WINKELCHEQUE_TEXT_TITLE;
                 case "Sport&Fit Cadeau":
                     return MODULE_PAYMENT_MSP_SPORTNFIT_TEXT_TITLE;
-                case "Parfum.nl Cadeaukaart":
-                    return MODULE_PAYMENT_MSP_PARFUMNL_TEXT_TITLE;
                 case "Parfum Cadeaukaart":
                     return MODULE_PAYMENT_MSP_PARFUMCADEAUKAART_TEXT_TITLE;
                 case "Jewelstore Giftcard":
