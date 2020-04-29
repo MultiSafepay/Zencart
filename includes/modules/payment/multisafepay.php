@@ -1496,8 +1496,6 @@ if (!class_exists('multisafepay')) {
                     return MODULE_PAYMENT_MSP_DOTPAY_TEXT_TITLE;
                 case "EPS":
                     return MODULE_PAYMENT_MSP_EPS_TEXT_TITLE;
-                case "Ferbuy":
-                    return MODULE_PAYMENT_MSP_FERBUY_TEXT_TITLE;
                 case "PaySafeCard":
                     return MODULE_PAYMENT_MSP_PAYSAFECARD_TEXT_TITLE;
                 case "Direct Bank Transfer":
