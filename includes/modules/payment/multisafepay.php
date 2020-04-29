@@ -1417,7 +1417,6 @@ if (!class_exists('multisafepay')) {
         {
 
             if (MODULE_PAYMENT_MULTISAFEPAY_TITLES_ICON_DISABLED != 'False') {
-
                 $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
             } else {
                 $title = "";
@@ -1444,6 +1443,15 @@ if (!class_exists('multisafepay')) {
                 //Payment methods
                 case "AfterPay":
                     return MODULE_PAYMENT_MSP_AFTERPAY_TEXT_TITLE;
+                case "Santander Consumer Finance | Betaal per Maand":
+                case "Santander Consumer Finance | Pay per Month":
+
+                    if (MODULE_PAYMENT_MULTISAFEPAY_TITLES_ICON_DISABLED == 'False') {
+                        return MODULE_PAYMENT_MSP_SANTANDER_TEXT_TITLE;
+                    }else {
+                        return MODULE_PAYMENT_MSP_SANTANDER_SHORT_TEXT_TITLE;
+                    }
+
                 case "title":
                     return MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE;
                 case "iDEAL":
