@@ -1210,7 +1210,8 @@ class multisafepay_fastcheckout
                 'orders_status_id' => $GLOBALS['order']->info['order_status'],
                 'date_added' => 'now()',
                 'customer_notified' => 1,
-                'comments' => $comment
+                'comments' => $comment,
+                'updated_by' => 'MultiSafepay'
             );
 
             zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
@@ -1467,7 +1468,8 @@ class multisafepay_fastcheckout
             'orders_status_id' => $order->info['order_status'],
             'date_added' => 'now()',
             'customer_notified' => '0',
-            'comments' => $order->info['comments']
+            'comments' => $order->info['comments'],
+            'updated_by' => 'MultiSafepay'
         );
 
         zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
