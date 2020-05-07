@@ -524,24 +524,14 @@ class multisafepay_fastcheckout
         return false;
     }
 
-    /**
-     * Payment verification
-     */
     function before_process()
     {
-        $this->_save_order();
-
-        zen_redirect($this->_start_fastcheckout());
+        $GLOBALS['order']->info['payment_method'] = trim(strip_tags($GLOBALS['order']->info['payment_method']));
     }
 
-    /**
-     * Post-processing of the payment/order after the order has been finalised
-     * 
-     * @return boolean
-     */
     function after_process()
     {
-        return false;
+        zen_redirect($this->_start_fastcheckout());
     }
 
     /**
@@ -657,6 +647,9 @@ class multisafepay_fastcheckout
      */
     function _start_fastcheckout()
     {
+        global $insert_id;
+        $this->order_id = $insert_id;
+
         $items = "<ul>\n";
         foreach ($GLOBALS['order']->products as $product) {
             $items .= "<li>" . $product['qty'] . 'x ' . $product['name'] . "</li>\n";

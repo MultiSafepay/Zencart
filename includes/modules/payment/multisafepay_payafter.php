@@ -309,24 +309,14 @@ class multisafepay_payafter
         return ($output);
     }
 
-    // ---- process payment ----
-
-    /*
-     * Payment verification
-     */
     function before_process()
     {
-        $this->_save_order();
-        zen_redirect($this->_start_payafter());
+        $GLOBALS['order']->info['payment_method'] = trim(strip_tags($GLOBALS['order']->info['payment_method']));
     }
-
-    /*
-     * Post-processing of the payment/order after the order has been finalised
-     */
 
     function after_process()
     {
-        return false;
+        zen_redirect($this->_start_payafter());
     }
 
     // ---- error handling ----
@@ -345,6 +335,9 @@ class multisafepay_payafter
      */
     function _start_payafter()
     {
+        global $insert_id;
+        $this->order_id = $insert_id;
+
         $items_list = "<ul>\n";
         foreach ($GLOBALS['order']->products as $product) {
             $items_list .= "<li>" . $product['qty'] . 'x ' . $product['name'] . "</li>\n";
@@ -993,270 +986,7 @@ class multisafepay_payafter
         zen_redirect('index.php?main_page=' . FILENAME_CHECKOUT_PAYMENT);
     }
 
-    /**
-     * Store the order in the database, and set $this->order_id
-     * 
-     * @global type $customer_id
-     * @global type $languages_id
-     * @global type $order
-     * @global type $order_totals
-     * @global type $order_products_id
-     * @global type $db
-     * @return type
-     */
-    function _save_order()
-    {
-        global $customer_id;
-        global $languages_id;
-        global $order;
-        global $order_totals;
-        global $order_products_id;
-        global $db;
-
-        if (empty($order_totals)) {
-            require(DIR_WS_CLASSES . 'order_total.php');
-            $order_total_modules = new order_total();
-            $order_totals = $order_total_modules->process();
-        }
-
-        if (!empty($this->order_id) && $this->order_id > 0) {
-            return;
-        }
-
-        $sql_data_array = array('customers_id' => $customer_id,
-            'customers_name' => $order->customer['firstname'] . ' ' . $order->customer['lastname'],
-            'customers_company' => $order->customer['company'],
-            'customers_street_address' => $order->customer['street_address'],
-            'customers_suburb' => $order->customer['suburb'],
-            'customers_city' => $order->customer['city'],
-            'customers_postcode' => $order->customer['postcode'],
-            'customers_state' => $order->customer['state'],
-            'customers_country' => $order->customer['country']['title'],
-            'customers_telephone' => $order->customer['telephone'],
-            'customers_email_address' => $order->customer['email_address'],
-            'customers_address_format_id' => $order->customer['format_id'],
-            'delivery_name' => $order->delivery['firstname'] . ' ' . $order->delivery['lastname'],
-            'delivery_company' => $order->delivery['company'],
-            'delivery_street_address' => $order->delivery['street_address'],
-            'delivery_suburb' => $order->delivery['suburb'],
-            'delivery_city' => $order->delivery['city'],
-            'delivery_postcode' => $order->delivery['postcode'],
-            'delivery_state' => $order->delivery['state'],
-            'delivery_country' => $order->delivery['country']['title'],
-            'delivery_address_format_id' => $order->delivery['format_id'],
-            'billing_name' => $order->billing['firstname'] . ' ' . $order->billing['lastname'],
-            'billing_company' => $order->billing['company'],
-            'billing_street_address' => $order->billing['street_address'],
-            'billing_suburb' => $order->billing['suburb'],
-            'billing_city' => $order->billing['city'],
-            'billing_postcode' => $order->billing['postcode'],
-            'billing_state' => $order->billing['state'],
-            'billing_country' => $order->billing['country']['title'],
-            'billing_address_format_id' => $order->billing['format_id'],
-            'payment_method' => 'Pay After Delivery',
-            'payment_module_code' => $order->info['payment_module_code'],
-            'coupon_code' => $order->info['coupon_code'],
-            'cc_type' => $order->info['cc_type'],
-            'cc_owner' => $order->info['cc_owner'],
-            'cc_number' => $order->info['cc_number'],
-            'cc_expires' => $order->info['cc_expires'],
-            'date_purchased' => 'now()',
-            'orders_status' => $order->info['order_status'],
-            'shipping_module_code' => $order->info['shipping_module_code'],
-            'shipping_method' => $order->info['shipping_method'],
-            'currency' => $GLOBALS['order']->info['currency'],
-            'currency_value' => $order->info['currency_value'],
-            'order_total' => $order->info['total'],
-            'order_tax' => $order->info['tax'],
-            'ip_address' => $_SESSION['customers_ip_address'] . ' - ' . $_SERVER['REMOTE_ADDR']
-        );
-
-        zen_db_perform(TABLE_ORDERS, $sql_data_array);
-        $insert_id = $db->Insert_ID();
-        $zf_insert_id = $insert_id;
-
-        for ($i = 0, $n = sizeof($order_totals); $i < $n; $i++) {
-            $sql_data_array = array('orders_id' => $insert_id,
-                'title' => $order_totals[$i]['title'],
-                'text' => $order_totals[$i]['text'],
-                'value' => $order_totals[$i]['value'],
-                'class' => $order_totals[$i]['code'],
-                'sort_order' => $order_totals[$i]['sort_order']);
-            zen_db_perform(TABLE_ORDERS_TOTAL, $sql_data_array);
-        }
-
-        $sql_data_array = array('orders_id' => $insert_id,
-            'orders_status_id' => $order->info['order_status'],
-            'date_added' => 'now()',
-            'customer_notified' => '0',
-            'comments' => $order->info['comments'],
-            'updated_by' => 'MultiSafepay'
-        );
-        zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
-
-        for ($i = 0, $n = sizeof($order->products); $i < $n; $i++) {
-            // Stock Update - Joao Correia
-            if (STOCK_LIMITED == 'true') {
-                if (DOWNLOAD_ENABLED == 'true') {
-                    $stock_query_raw = "SELECT products_quantity, pad.products_attributes_filename
-                                        FROM " . TABLE_PRODUCTS . " p
-                                        LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES . " pa
-                                         ON p.products_id=pa.products_id
-                                        LEFT JOIN " . TABLE_PRODUCTS_ATTRIBUTES_DOWNLOAD . " pad
-                                         ON pa.products_attributes_id=pad.products_attributes_id
-                                        WHERE p.products_id = '" . zen_get_prid($order->products[$i]['id']) . "'";
-                    // Will work with only one option for downloadable products
-                    // otherwise, we have to build the query dynamically with a loop
-                    $products_attributes = $order->products[$i]['attributes'];
-                    if (is_array($products_attributes)) {
-                        $stock_query_raw .= " AND pa.options_id = '" . $products_attributes[0]['option_id'] . "' AND pa.options_values_id = '" . $products_attributes[0]['value_id'] . "'";
-                    }
-                    $stock_query = $db->Execute($stock_query_raw);
-                } else {
-                    $stock_query = $db->Execute("select products_quantity from " . TABLE_PRODUCTS . " where products_id = '" . zen_get_prid($order->products[$i]['id']) . "'");
-                }
-                if ($stock_query->RecordCount() > 0) {
-                    $stock_values = $stock_query; //zen_db_fetch_array($stock_query);
-                    // do not decrement quantities if products_attributes_filename exists
-                    if ((DOWNLOAD_ENABLED != 'true') || (!$stock_values->products_attributes_filename)) {
-                        $stock_left = $stock_values->fields['products_quantity'] - $order->products[$i]['qty'];
-                    } else {
-                        $stock_left = $stock_values->fields['products_quantity'];
-                    }
-                    $db->Execute("update " . TABLE_PRODUCTS . " set products_quantity = '" . $stock_left . "' where products_id = '" . zen_get_prid($order->products[$i]['id']) . "'");
-                    if (($stock_left < 1) && (STOCK_ALLOW_CHECKOUT == 'false')) {
-                        $db->Execute("update " . TABLE_PRODUCTS . " set products_status = '0' where products_id = '" . zen_get_prid($order->products[$i]['id']) . "'");
-                    }
-                }
-            }
-
-            // Update products_ordered (for bestsellers list)
-            $db->Execute("update " . TABLE_PRODUCTS . " set products_ordered = products_ordered + " . sprintf('%d', $order->products[$i]['qty']) . " where products_id = '" . zen_get_prid($order->products[$i]['id']) . "'");
-
-            $sql_data_array = array('orders_id' => $zf_insert_id,
-                'products_id' => zen_get_prid($order->products[$i]['id']),
-                'products_model' => $order->products[$i]['model'],
-                'products_name' => $order->products[$i]['name'],
-                'products_price' => $order->products[$i]['price'],
-                'final_price' => $order->products[$i]['final_price'],
-                'onetime_charges' => $order->products[$i]['onetime_charges'],
-                'products_tax' => $order->products[$i]['tax'],
-                'products_quantity' => $order->products[$i]['qty'],
-                'products_priced_by_attribute' => $order->products[$i]['products_priced_by_attribute'],
-                'product_is_free' => $order->products[$i]['product_is_free'],
-                'products_discount_type' => $order->products[$i]['products_discount_type'],
-                'products_discount_type_from' => $order->products[$i]['products_discount_type_from'],
-                'products_prid' => $order->products[$i]['id']);
-
-            zen_db_perform(TABLE_ORDERS_PRODUCTS, $sql_data_array);
-
-            $order_products_id = $db->Insert_ID();
-
-            // $this->notify('NOTIFY_ORDER_DURING_CREATE_ADDED_PRODUCT_LINE_ITEM', array_merge(array('orders_products_id' => $order_products_id), $sql_data_array));
-            // $this->notify('NOTIFY_ORDER_PROCESSING_CREDIT_ACCOUNT_UPDATE_BEGIN');
-            // $order_total_modules->update_credit_account($i);//ICW ADDED FOR CREDIT CLASS SYSTEM
-            // $this->notify('NOTIFY_ORDER_PROCESSING_ATTRIBUTES_BEGIN');
-            //------ bof: insert customer-chosen options to order--------
-            $attributes_exist = '0';
-            //$order->products_ordered_attributes = '';
-            if (isset($order->products[$i]['attributes'])) {
-                $attributes_exist = '1';
-                for ($j = 0, $n2 = sizeof($order->products[$i]['attributes']); $j < $n2; $j++) {
-                    if (DOWNLOAD_ENABLED == 'true') {
-                        $attributes_query = "select popt.products_options_name, poval.products_options_values_name,
-                                 pa.options_values_price, pa.price_prefix,
-                                 pa.product_attribute_is_free, pa.products_attributes_weight, pa.products_attributes_weight_prefix,
-                                 pa.attributes_discounted, pa.attributes_price_base_included, pa.attributes_price_onetime,
-                                 pa.attributes_price_factor, pa.attributes_price_factor_offset,
-                                 pa.attributes_price_factor_onetime, pa.attributes_price_factor_onetime_offset,
-                                 pa.attributes_qty_prices, pa.attributes_qty_prices_onetime,
-                                 pa.attributes_price_words, pa.attributes_price_words_free,
-                                 pa.attributes_price_letters, pa.attributes_price_letters_free,
-                                 pad.products_attributes_maxdays, pad.products_attributes_maxcount, pad.products_attributes_filename
-                                 from " . TABLE_PRODUCTS_OPTIONS . " popt, " . TABLE_PRODUCTS_OPTIONS_VALUES . " poval, " .
-                                TABLE_PRODUCTS_ATTRIBUTES . " pa
-                                  left join " . TABLE_PRODUCTS_ATTRIBUTES_DOWNLOAD . " pad
-                                  on pa.products_attributes_id=pad.products_attributes_id
-                                 where pa.products_id = '" . zen_db_input($order->products[$i]['id']) . "'
-                                  and pa.options_id = '" . $order->products[$i]['attributes'][$j]['option_id'] . "'
-                                  and pa.options_id = popt.products_options_id
-                                  and pa.options_values_id = '" . $order->products[$i]['attributes'][$j]['value_id'] . "'
-                                  and pa.options_values_id = poval.products_options_values_id
-                                  and popt.language_id = '" . $_SESSION['languages_id'] . "'
-                                  and poval.language_id = '" . $_SESSION['languages_id'] . "'";
-
-                        $attributes_values = $db->Execute($attributes_query);
-                    } else {
-                        $attributes_values = $db->Execute("select popt.products_options_name, poval.products_options_values_name,
-                                 pa.options_values_price, pa.price_prefix,
-                                 pa.product_attribute_is_free, pa.products_attributes_weight, pa.products_attributes_weight_prefix,
-                                 pa.attributes_discounted, pa.attributes_price_base_included, pa.attributes_price_onetime,
-                                 pa.attributes_price_factor, pa.attributes_price_factor_offset,
-                                 pa.attributes_price_factor_onetime, pa.attributes_price_factor_onetime_offset,
-                                 pa.attributes_qty_prices, pa.attributes_qty_prices_onetime,
-                                 pa.attributes_price_words, pa.attributes_price_words_free,
-                                 pa.attributes_price_letters, pa.attributes_price_letters_free
-                                 from " . TABLE_PRODUCTS_OPTIONS . " popt, " . TABLE_PRODUCTS_OPTIONS_VALUES . " poval, " . TABLE_PRODUCTS_ATTRIBUTES . " pa
-                                 where pa.products_id = '" . $order->products[$i]['id'] . "' and pa.options_id = '" . (int) $order->products[$i]['attributes'][$j]['option_id'] . "' and pa.options_id = popt.products_options_id and pa.options_values_id = '" . (int) $order->products[$i]['attributes'][$j]['value_id'] . "' and pa.options_values_id = poval.products_options_values_id and popt.language_id = '" . $_SESSION['languages_id'] . "' and poval.language_id = '" . $_SESSION['languages_id'] . "'");
-                    }
-
-                    //clr 030714 update insert query.  changing to use values form $order->products for products_options_values.
-                    $sql_data_array = array('orders_id' => $zf_insert_id,
-                        'orders_products_id' => $order_products_id,
-                        'products_options' => $attributes_values->fields['products_options_name'],
-                        //                                 'products_options_values' => $attributes_values->fields['products_options_values_name'],
-                        'products_options_values' => $order->products[$i]['attributes'][$j]['value'],
-                        'options_values_price' => $attributes_values->fields['options_values_price'],
-                        'price_prefix' => $attributes_values->fields['price_prefix'],
-                        'product_attribute_is_free' => $attributes_values->fields['product_attribute_is_free'],
-                        'products_attributes_weight' => $attributes_values->fields['products_attributes_weight'],
-                        'products_attributes_weight_prefix' => $attributes_values->fields['products_attributes_weight_prefix'],
-                        'attributes_discounted' => $attributes_values->fields['attributes_discounted'],
-                        'attributes_price_base_included' => $attributes_values->fields['attributes_price_base_included'],
-                        'attributes_price_onetime' => $attributes_values->fields['attributes_price_onetime'],
-                        'attributes_price_factor' => $attributes_values->fields['attributes_price_factor'],
-                        'attributes_price_factor_offset' => $attributes_values->fields['attributes_price_factor_offset'],
-                        'attributes_price_factor_onetime' => $attributes_values->fields['attributes_price_factor_onetime'],
-                        'attributes_price_factor_onetime_offset' => $attributes_values->fields['attributes_price_factor_onetime_offset'],
-                        'attributes_qty_prices' => $attributes_values->fields['attributes_qty_prices'],
-                        'attributes_qty_prices_onetime' => $attributes_values->fields['attributes_qty_prices_onetime'],
-                        'attributes_price_words' => $attributes_values->fields['attributes_price_words'],
-                        'attributes_price_words_free' => $attributes_values->fields['attributes_price_words_free'],
-                        'attributes_price_letters' => $attributes_values->fields['attributes_price_letters'],
-                        'attributes_price_letters_free' => $attributes_values->fields['attributes_price_letters_free'],
-                        'products_options_id' => (int) $order->products[$i]['attributes'][$j]['option_id'],
-                        'products_options_values_id' => (int) $order->products[$i]['attributes'][$j]['value_id'],
-                        'products_prid' => $order->products[$i]['id']
-                    );
-
-
-                    zen_db_perform(TABLE_ORDERS_PRODUCTS_ATTRIBUTES, $sql_data_array);
-
-                    //  $this->notify('NOTIFY_ORDER_DURING_CREATE_ADDED_ATTRIBUTE_LINE_ITEM', $sql_data_array);
-
-                    if ((DOWNLOAD_ENABLED == 'true') && isset($attributes_values->fields['products_attributes_filename']) && zen_not_null($attributes_values->fields['products_attributes_filename'])) {
-                        $sql_data_array = array('orders_id' => $zf_insert_id,
-                            'orders_products_id' => $order_products_id,
-                            'orders_products_filename' => $attributes_values->fields['products_attributes_filename'],
-                            'download_maxdays' => $attributes_values->fields['products_attributes_maxdays'],
-                            'download_count' => $attributes_values->fields['products_attributes_maxcount'],
-                            'products_prid' => $order->products[$i]['id']
-                        );
-
-                        zen_db_perform(TABLE_ORDERS_PRODUCTS_DOWNLOAD, $sql_data_array);
-
-                        // $this->notify('NOTIFY_ORDER_DURING_CREATE_ADDED_ATTRIBUTE_DOWNLOAD_LINE_ITEM', $sql_data_array);
-                    }
-                    $this->products_ordered_attributes .= "\n\t" . $attributes_values->fields['products_options_name'] . ' ' . zen_decode_specialchars($this->products[$i]['attributes'][$j]['value']);
-                }
-            }
-            //------eof: insert customer-chosen options ----
-        }
-
-        $this->order_id = $insert_id;
-    }
-
-    /**
+     /**
      * 
      * @global type $db
      * @param type $address_format_id
