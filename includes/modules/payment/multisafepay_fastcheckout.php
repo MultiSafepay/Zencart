@@ -22,8 +22,9 @@
  */
 
 require_once(DIR_FS_CATALOG . "mspcheckout/API/Autoloader.php");
+require_once('multisafepay.php');
 
-class multisafepay_fastcheckout
+class multisafepay_fastcheckout extends MultiSafepay
 {
 
     var $code;
@@ -76,25 +77,6 @@ class multisafepay_fastcheckout
 
     /**
      * 
-     * @param type $admin
-     * @return type
-     */
-    function getTitle($admin = 'title')
-    {
-        $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
-
-        $title .= ($this->checkView() == "admin") ? "MultiSafepay - " : "";
-        if ($admin && $this->checkView() == "admin") {
-            $title .= $admin;
-        } else {
-            $title .= $this->getLangStr($admin);
-        }
-
-        return $title;
-    }
-
-    /**
-     * 
      * @param type $str
      * @return type
      */
@@ -125,53 +107,6 @@ class multisafepay_fastcheckout
         global $PHP_SELF;
 
         return basename($PHP_SELF);
-    }
-
-    /**
-     * 
-     * @return boolean|string
-     */
-    function getIcon()
-    {
-        if (MODULE_PAYMENT_MULTISAFEPAY_FCO_BTN_COLOR == 'Orange') {
-            $btn_icon = "fcobutton-orange.png";
-        } else {
-            $btn_icon = "fcobutton-black.png";
-        }
-
-        if (file_exists(DIR_WS_IMAGES . "multisafepay/" . strtolower($this->getUserLanguage("DETECT")) . $btn_icon)) {
-            $icon = DIR_WS_IMAGES . "multisafepay/" . strtolower($this->getUserLanguage("DETECT")) . $btn_icon;
-
-            return $icon;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * 
-     * @global type $db
-     * @global type $languages_id
-     * @param type $savedSetting
-     * @return string
-     */
-    function getUserLanguage($savedSetting)
-    {
-        global $db;
-
-        if ($savedSetting != "DETECT") {
-            return $savedSetting;
-        }
-
-        global $languages_id;
-
-        $query = $db->Execute("select languages_id, name, code, image, directory from " . TABLE_LANGUAGES . " where languages_id = " . (int) $languages_id . " limit 1");
-
-        if ($languages == $query) {
-            return strtolower($languages['code']);
-        }
-
-        return "en";
     }
 
     /**
@@ -463,34 +398,6 @@ class multisafepay_fastcheckout
     function javascript_validation()
     {
         return false;
-    }
-
-    /**
-     * Outputs the payment method title/text and if required, the input fields
-     * 
-     * @global type $customer_id
-     * @global type $languages_id
-     * @global type $order
-     * @global type $order_totals
-     * @global type $order_products_id
-     * @return type
-     */
-    function selection()
-    {
-        global $customer_id;
-        global $languages_id;
-        global $order;
-        global $order_totals;
-        global $order_products_id;
-
-        if (empty($this->api_url)) {
-            return;
-        }
-
-        return array(
-            'id' => $this->code,
-            'module' => $this->public_title
-        );
     }
 
     /**

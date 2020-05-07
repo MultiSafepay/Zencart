@@ -37,7 +37,6 @@ if (!class_exists('multisafepay')) {
         var $icon = "connect.png";
         var $api_url;
         var $order_id;
-        var $public_title;
         var $status;
         var $order_status;
         var $shipping_methods = array();
@@ -65,7 +64,6 @@ if (!class_exists('multisafepay')) {
             $this->api_url = $this->get_api_url();
 
             $this->order_id = $order_id;
-            $this->public_title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE);
             $this->status = 1;
         }
 
@@ -108,22 +106,15 @@ if (!class_exists('multisafepay')) {
             return false;
         }
 
-        /*
-         * Outputs the payment method title/text and if required, the input fields
+        /**
+         * @return array
          */
-
-        function selection()
+        public function selection()
         {
-            global $customer_id;
-            global $languages_id;
-            global $order;
-            global $order_totals;
-            global $order_products_id;
-
-            $selection = array('id' => $this->code,
-                'module' => $this->public_title,
-                'fields' => array());
-            return $selection;
+            return array(
+                'id' => $this->code,
+                'module' => $this->title
+            );
         }
 
         /*
@@ -1124,25 +1115,18 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         *
-         * @param type $admin
-         * @return type
+         * @param string $title
+         * @return string|type
          */
-        function getTitle($admin = 'title')
+        public function getTitle($title = 'MultiSafepay')
         {
-
-            if (MODULE_PAYMENT_MULTISAFEPAY_TITLES_ICON_DISABLED != 'False') {
-                $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
-            } else {
-                $title = "";
+            if ($this->checkView() == "admin") {
+                return 'MultiSafepay - ' . $title;
             }
 
-            $title .= ($this->checkView() == "admin") ? "MultiSafepay - " : "";
-            if ($admin && $this->checkView() == "admin") {
-                $title .= $admin;
-            } else {
-
-                $title .= $this->getLangStr($admin);
+            $title = $this->getLangStr($title);
+            if (MODULE_PAYMENT_MULTISAFEPAY_TITLES_ICON_DISABLED == 'True') {
+                $title = $this->generateIcon($this->getIcon()) . " " . $title;
             }
             return $title;
         }
@@ -1309,38 +1293,25 @@ if (!class_exists('multisafepay')) {
          *
          * @return string
          */
-        function getIcon()
+        public function getIcon()
         {
-            if (file_exists(DIR_WS_IMAGES . "multisafepay/" . strtolower($this->getUserLanguage("DETECT")) . "/" . $this->icon)) {
-                $icon = DIR_WS_IMAGES . "multisafepay/" . strtolower($this->getUserLanguage("DETECT")) . "/" . $this->icon;
+            // Get language specific logo
+            $icon = DIR_WS_IMAGES . 'multisafepay/' . $this->getUserLanguage() . '/' . $this->icon;
+            if (file_exists($icon)) {
+                return $icon;
             }
 
-            return $icon;
+            // Fallback to default logo's
+            $icon = DIR_WS_IMAGES . 'multisafepay/en/' . $this->icon;
+            return file_exists($icon) ? $icon : null;
         }
 
         /**
-         *
-         * @global type $db
-         * @global type $languages_id
-         * @param type $savedSetting
          * @return string
          */
-        function getUserLanguage($savedSetting)
+        public function getUserLanguage()
         {
-            global $db;
-            if ($savedSetting != "DETECT") {
-                return $savedSetting;
-            }
-
-            global $languages_id;
-
-            $query = $db->Execute("select languages_id, name, code, image, directory from " . TABLE_LANGUAGES . " where languages_id = " . (int) $languages_id . " limit 1");
-
-            if ($languages == $query) {//changed loop
-                return strtolower($languages['code']);
-            }
-
-            return "en";
+            return strtolower($_SESSION['languages_code']);
         }
 
         /**
