@@ -27,7 +27,6 @@ if (!class_exists('multisafepay')) {
 
     class multisafepay
     {
-
         var $code;
         var $title;
         var $description;
@@ -61,7 +60,6 @@ if (!class_exists('multisafepay')) {
             if (is_object($order)) {
                 $this->update_status();
             }
-            $this->api_url = $this->get_api_url();
 
             $this->order_id = $order_id;
             $this->status = 1;
@@ -156,7 +154,8 @@ if (!class_exists('multisafepay')) {
 
         function after_process()
         {
-            zen_redirect($this->_start_transaction());
+            $this->prepare_transaction();
+            zen_redirect($this->start_transaction());
         }
 
         function output_error()
@@ -164,13 +163,24 @@ if (!class_exists('multisafepay')) {
             return false;
         }
 
+        function prepare_transaction()
+        {
+            $this->trans_type = isset($this->trans_type) ? $this->trans_type : 'redirect';
+            $this->gateway_info = null;
+        }
+
         /**
          *
          * @return type
          */
-        function _start_transaction()
+        function start_transaction()
         {
             global $insert_id;
+
+            $this->api_key = $this->get_api_key();
+            $this->api_url = $this->get_api_url();
+            $this->redirect_url = $this->get_redirect_url();
+            $this->gateway = $_POST['msp_paymentmethod'];
             $this->order_id = $insert_id;
 
             $order = $GLOBALS['order'];
@@ -183,31 +193,15 @@ if (!class_exists('multisafepay')) {
 
             $amount = round($order->info['total'], 2) * 100;
 
-            if ($_POST['msp_paymentmethod']) {
-                $gateway = $_POST['msp_paymentmethod'];
-            } else {
-                $gateway = null;
+            if ($_POST["msp_issuer"] && $this->gateway == 'IDEAL') {
+                $this->trans_type = "direct";
+                $this->gateway_info = array(
+                    'issuer_id' => $_POST["msp_issuer"]
+                );
             }
 
-            $trans_type = "redirect";
-
-            if ($_POST["msp_issuer"] && $gateway == 'IDEAL') {
-                $selected_issuer = $_POST["msp_issuer"];
-                $trans_type = "direct";
-            } else {
-                $selected_issuer = null;
-            }
-
-            if (MODULE_PAYMENT_MSP_BANKTRANS_DIRECT == 'True' && $gateway == 'BANKTRANS') {
-                $trans_type = "direct";
-            }
-
-            $sid = zen_session_name() . '=' . zen_session_id();
-
-            if (MODULE_PAYMENT_MULTISAFEPAY_AUTO_REDIRECT == "True") {
-                $redirect_url = $this->_href_link('ext/modules/payment/multisafepay/success.php?' . $sid, '', 'NONSSL', false, false);
-            } else {
-                $redirect_url = null;
+            if (MODULE_PAYMENT_MSP_BANKTRANS_DIRECT == 'True' && $this->gateway == 'BANKTRANS') {
+                $this->trans_type = "direct";
             }
 
             if (isset($order->customer['firstname'])) {
@@ -280,29 +274,27 @@ if (!class_exists('multisafepay')) {
                 $this->api_url = $this->get_api_url();
 
                 $this->msp->setApiUrl($this->api_url);
-                $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
+                $this->msp->setApiKey($this->get_api_key());
 
                 $this->msp->orders->post(array(
-                    "type" => $trans_type,
+                    "type" => $this->trans_type,
                     "order_id" => $this->order_id,
                     "currency" => $order->info['currency'],
                     "amount" => round($amount),
-                    "gateway" => $gateway,
+                    "gateway" => $this->gateway,
                     "description" => "Order #" . $this->order_id . " " . MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT . " " . STORE_NAME,
                     "items" => $items,
                     "manual" => false,
                     "days_active" => MODULE_PAYMENT_MULTISAFEPAY_DAYS_ACTIVE,
                     "payment_options" => array(
                         "notification_url" => $this->_href_link('ext/modules/payment/multisafepay/notify_checkout.php?type=initial&', '', 'NONSSL', false, false),
-                        "redirect_url" => $redirect_url,
+                        "redirect_url" => $this->redirect_url,
                         "cancel_url" => $this->_href_link('ext/modules/payment/multisafepay/cancel.php'),
                         "close_window" => true
                     ),
                     "customer" => $customer_data,
                     "delivery" => $delivery_data,
-                    "gateway_info" => array(
-                        "issuer_id" => $selected_issuer
-                    ),
+                    "gateway_info" => $this->gateway_info,
                     "shopping_cart" => $this->getShoppingCart($order),
                     "checkout_options" => $this->getCheckoutOptions(),
 
@@ -318,7 +310,7 @@ if (!class_exists('multisafepay')) {
                     )
                 ));
 
-                if ($gateway == 'BANKTRANS' && $trans_type == 'direct') {
+                if ($this->gateway == 'BANKTRANS' && $this->trans_type == 'direct') {
                     zen_redirect(zen_href_link(FILENAME_CHECKOUT_SUCCESS, '', 'SSL'));
                 } else {
                     return $this->msp->orders->getPaymentLink();
@@ -569,7 +561,7 @@ if (!class_exists('multisafepay')) {
                 $this->api_url = $this->get_api_url();
 
                 $this->msp->setApiUrl($this->api_url);
-                $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
+                $this->msp->setApiKey($this->get_api_key());
 
                 $response = $this->msp->orders->get('orders', $this->order_id);
 
@@ -600,7 +592,7 @@ if (!class_exists('multisafepay')) {
                 $this->api_url = $this->get_api_url();
 
                 $this->msp->setApiUrl($this->api_url);
-                $this->msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
+                $this->msp->setApiKey($this->get_api_key());
 
                 $response = $this->msp->orders->get('orders', $this->order_id);
                 $status = $response->status;
@@ -1374,7 +1366,7 @@ if (!class_exists('multisafepay')) {
                 $api_url = $this->get_api_url();
 
                 $msp->setApiUrl($api_url);
-                $msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
+                $msp->setApiKey($this->get_api_key());
 
                 $endpoint = 'orders/' . $order_id;
                 $setShipping = array(
@@ -1391,6 +1383,15 @@ if (!class_exists('multisafepay')) {
             }
         }
 
+
+        /**
+         * @return mixed
+         */
+        public function get_api_key()
+        {
+            return MODULE_PAYMENT_MULTISAFEPAY_API_KEY;
+        }
+
         /**
          * @return string
          */
@@ -1403,6 +1404,18 @@ if (!class_exists('multisafepay')) {
             }
         }
 
+        /**
+         * @return string|null
+         */
+        protected function get_redirect_url()
+        {
+            $sid = zen_session_name() . '=' . zen_session_id();
+
+            if (MODULE_PAYMENT_MULTISAFEPAY_AUTO_REDIRECT) {
+                return $this->_href_link('ext/modules/payment/multisafepay/success.php?' . $sid, '', 'NONSSL', false, false);
+            } else {
+                return null;
+            }
+        }
     }
 }
-?>
