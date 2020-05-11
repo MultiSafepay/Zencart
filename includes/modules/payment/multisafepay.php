@@ -210,12 +210,6 @@ if (!class_exists('multisafepay')) {
                 $redirect_url = null;
             }
 
-            if ($_SESSION['sendto'] == '') {
-                $ext_var3 = $_SESSION['billto'];
-            } else {
-                $ext_var3 = $_SESSION['sendto'];
-            }
-
             if (isset($order->customer['firstname'])) {
                 list($cust_street, $cust_housenumber) = $this->parseAddress($order->customer['street_address']);
                 $locale = strtolower($order->customer['country']['iso_code_2']) . '_' . $order->customer['country']['iso_code_2'];
@@ -295,9 +289,6 @@ if (!class_exists('multisafepay')) {
                     "amount" => round($amount),
                     "gateway" => $gateway,
                     "description" => "Order #" . $this->order_id . " " . MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT . " " . STORE_NAME,
-                    "var1" => $_SESSION['customer_id'],
-                    "var2" => $_SESSION['billto'],
-                    "var3" => $ext_var3,
                     "items" => $items,
                     "manual" => false,
                     "days_active" => MODULE_PAYMENT_MULTISAFEPAY_DAYS_ACTIVE,
@@ -621,11 +612,7 @@ if (!class_exists('multisafepay')) {
 
             $order->customer['firstname'] = $response->customer->first_name;
             $order->customer['lastname'] = $response->customer->last_name;
-            $_SESSION['customer_id'] = $response->var1;
-            $_SESSION['billto'] = $response->var2;
-            $_SESSION['sendto'] = $response->var3;
             $reset_cart = false;
-            $notify_customer = false;
 
             $current_order = $db->Execute("SELECT orders_status FROM " . TABLE_ORDERS . " WHERE orders_id = " . $this->order_id);
 
@@ -646,7 +633,6 @@ if (!class_exists('multisafepay')) {
                     if (in_array($old_order_status, array(MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_INITIALIZED, DEFAULT_ORDERS_STATUS_ID, MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_UNCLEARED))) {
                         $GLOBALS['order']->info['order_status'] = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;
                         $reset_cart = true;
-                        $notify_customer = true;
                         $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;
                     } else {
                         $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_COMPLETED;
@@ -657,7 +643,6 @@ if (!class_exists('multisafepay')) {
                     $GLOBALS['order']->info['order_status'] = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_UNCLEARED;
                     $new_stat = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_UNCLEARED;
                     $reset_cart = true;
-                    $notify_customer = true;
                     break;
                 case "reserved":
                     $GLOBALS['order']->info['order_status'] = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_RESERVED;
@@ -765,13 +750,6 @@ if (!class_exists('multisafepay')) {
                     ($product['onetime_charges'] != 0 ? "\n" . TEXT_ONETIME_CHARGES_EMAIL . $currencies->display_price($product['onetime_charges'], $product['tax'], 1) : '') .
                     $order->products_ordered_attributes . "\n";
                 $i++;
-            }
-
-            if ($notify_customer) {
-                $order->send_order_email($this->order_id, 2);
-                unset($_SESSION['customer_id']);
-                unset($_SESSION['billto']);
-                unset($_SESSION['sendto']);
             }
 
             // if we don't inform the customer about the update, check if there's a new status. If so, update the order_status_history table accordingly
