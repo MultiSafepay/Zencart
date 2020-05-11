@@ -424,19 +424,16 @@ class multisafepay_klarna extends MultiSafepay
         //}           
 
         if ($order->info['shipping_cost'] != '0.00') {
-            if ($this->in_array_recursive(current(array_keys($order->info['tax_groups'])), $checkoutoptions_array['tax_tables']['alternate'])) {
-                $tax_percentage = $order->info['shipping_tax'] / ( $order->info['shipping_cost'] / 100);
-                $tax_percentage = $tax_percentage / 100;
+            $tax_percentage = $order->info['shipping_tax'] / $order->info['shipping_cost'];
 
-                $checkoutoptions_array['tax_tables']['alternate'][] = array(
-                    "standalone" => false,
-                    "name" => current(array_keys($order->info['tax_groups'])),
-                    "rules" => array(array
-                            (
-                            "rate" => $tax_percentage
-                        ))
-                );
-            }
+            $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                "standalone" => false,
+                "name" => 'Shipping',
+                "rules" => array(array
+                (
+                    "rate" => $tax_percentage
+                ))
+            );
         }
 
         return $checkoutoptions_array;
@@ -488,7 +485,7 @@ class multisafepay_klarna extends MultiSafepay
                 "unit_price" => $GLOBALS['order']->info['shipping_cost'],
                 "quantity" => 1,
                 "merchant_item_id" => 'msp-shipping',
-                "tax_table_selector" => current(array_keys($GLOBALS['order']->info['tax_groups'])),
+                "tax_table_selector" => 'Shipping',
                 "weight" => array(
                     "unit" => "KG",
                     "value" => 0
