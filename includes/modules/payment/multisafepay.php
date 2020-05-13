@@ -455,18 +455,19 @@ if (!class_exists('multisafepay')) {
             //}
 
 
+            $taxPercentage = 0;
             if ($order->info['shipping_cost'] != '0.00') {
-                $tax_percentage = $order->info['shipping_tax'] / $order->info['shipping_cost'];
-
-                $checkoutoptions_array['tax_tables']['alternate'][] = array(
-                    "standalone" => false,
-                    "name" => 'Shipping',
-                    "rules" => array(array
-                    (
-                        "rate" => $tax_percentage
-                    ))
-                );
+                $taxPercentage = $order->info['shipping_tax'] / $order->info['shipping_cost'];
             }
+            $checkoutoptions_array['tax_tables']['alternate'][] = array(
+                "standalone" => false,
+                "name" => 'Shipping',
+                "rules" => [
+                    [
+                    "rate" => $taxPercentage
+                    ]
+                ]
+            );
 
             return $checkoutoptions_array;
         }
