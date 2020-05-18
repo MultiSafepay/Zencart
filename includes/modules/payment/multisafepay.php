@@ -1108,6 +1108,8 @@ if (!class_exists('multisafepay')) {
         {
             switch ($str) {
                 //Payment methods
+                case "Klarna":
+                    return MODULE_PAYMENT_MSP_KLARNA_TEXT_TITLE;
                 case "AfterPay":
                     return MODULE_PAYMENT_MSP_AFTERPAY_TEXT_TITLE;
                 case "Santander Consumer Finance | Betaal per Maand":
