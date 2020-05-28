@@ -36,7 +36,6 @@ class multisafepay_einvoice extends MultiSafepay
     var $icon = "einvoice.png";
     var $api_url;
     var $order_id;
-    var $public_title;
     var $status;
     var $taxes = array();
     var $_customer_id = 0;
@@ -67,7 +66,6 @@ class multisafepay_einvoice extends MultiSafepay
         }
 
         $this->order_id = $order_id;
-        $this->public_title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_EINVOICE_TEXT_TITLE);
         $this->status = null;
 
         if ($_SESSION['currency'] != 'EUR') {

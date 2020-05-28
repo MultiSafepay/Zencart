@@ -36,7 +36,6 @@ class multisafepay_payafter extends MultiSafepay
     var $icon = "payafter.png";
     var $api_url;
     var $order_id;
-    var $public_title;
     var $status;
     var $shipping_methods = array();
     var $taxes = array();
@@ -68,7 +67,6 @@ class multisafepay_payafter extends MultiSafepay
         }
 
         $this->order_id = $order_id;
-        $this->public_title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_PAYAFTER_TEXT_TITLE);
         $this->status = null;
 
         if ($_SESSION['currency'] != 'EUR') {

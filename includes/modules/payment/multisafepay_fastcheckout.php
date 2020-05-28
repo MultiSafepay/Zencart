@@ -35,7 +35,6 @@ class multisafepay_fastcheckout extends MultiSafepay
     var $plugin_ver = "3.0.0";
     var $api_url;
     var $order_id;
-    var $public_title;
     var $status;
     var $order_status;
     var $shipping_methods = array();
@@ -70,7 +69,6 @@ class multisafepay_fastcheckout extends MultiSafepay
         }
 
         $this->order_id = $order_id;
-        $this->public_title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_FCO_TEXT_TITLE);
         $this->status = null;
         $this->enabled = false; //Disabled for normal checkout
     }

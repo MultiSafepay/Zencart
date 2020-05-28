@@ -39,7 +39,6 @@ class multisafepay_ideal extends multisafepay
 
         $this->code = 'multisafepay_ideal';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_IDEAL_TEXT_TITLE);
-        $this->public_title = $this->getTitle(MODULE_PAYMENT_MSP_IDEAL_TEXT_TITLE);
         $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
         $this->enabled = MODULE_PAYMENT_MSP_IDEAL_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_IDEAL_SORT_ORDER;

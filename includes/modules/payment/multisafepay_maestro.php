@@ -38,7 +38,6 @@ class multisafepay_maestro extends multisafepay
 
         $this->code = 'multisafepay_maestro';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_MAESTRO_TEXT_TITLE);
-        $this->public_title = $this->getTitle(MODULE_PAYMENT_MSP_MAESTRO_TEXT_TITLE);
         $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
         $this->enabled = MODULE_PAYMENT_MSP_MAESTRO_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_MAESTRO_SORT_ORDER;
