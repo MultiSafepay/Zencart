@@ -121,7 +121,6 @@ if (!class_exists('multisafepay')) {
 
         function pre_confirmation_check()
         {
-
         }
 
         // ---- confirm order ----
@@ -316,11 +315,19 @@ if (!class_exists('multisafepay')) {
                     return $this->msp->orders->getPaymentLink();
                 }
             } catch (Exception $e) {
-                $this->_error_redirect(htmlspecialchars($e->getMessage()));
+                switch ($this->getErrorCode($e->getMessage())) {
+                    case '1024':
+                        $msg = MODULE_PAYMENT_MULTISAFEPAY_TEXT_ERROR_1024;
+                        break;
+                    default:
+                        $msg = $e->getMessage();
+                        break;
+                }
+
+                $this->_error_redirect(htmlspecialchars($msg));
                 die();
             }
         }
-
 
 
         /**
@@ -1108,6 +1115,14 @@ if (!class_exists('multisafepay')) {
         {
             switch ($str) {
                 //Payment methods
+                case "Betaal Na Ontvangst":
+                case "Pay After Delivery":
+                case "Payer après livraison":
+                case "Bezahlen nach Anlieferung":
+                case "Pagamento dopo ricevuta":
+                case "Pague después de la entrega":
+                    return MODULE_PAYMENT_MSP_PAYAFTER_TEXT_TITLE;
+
                 case "Klarna":
                     return MODULE_PAYMENT_MSP_KLARNA_TEXT_TITLE;
                 case "AfterPay":
@@ -1417,6 +1432,15 @@ if (!class_exists('multisafepay')) {
             } else {
                 return null;
             }
+        }
+
+        /**
+         * @param $error
+         * @return false|string
+         */
+        public function getErrorCode($error)
+        {
+            return substr($error, 0, 4);
         }
     }
 }
