@@ -1115,6 +1115,9 @@ if (!class_exists('multisafepay')) {
         {
             switch ($str) {
                 //Payment methods
+                case "E-Invoicing":
+                    return MODULE_PAYMENT_MSP_EINVOICE_TEXT_TITLE;
+
                 case "Betaal Na Ontvangst":
                 case "Pay After Delivery":
                 case "Payer après livraison":
