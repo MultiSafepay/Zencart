@@ -42,7 +42,6 @@ class multisafepay_santander extends multisafepay
         $this->enabled = MODULE_PAYMENT_MSP_SANTANDER_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_SANTANDER_SORT_ORDER;
 
-
         if (is_object($order)) {
             $this->update_status();
         }

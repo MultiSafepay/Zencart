@@ -1099,154 +1099,22 @@ if (!class_exists('multisafepay')) {
                 return 'MultiSafepay - ' . $title;
             }
 
-            $title = $this->getLangStr($title);
             if (MODULE_PAYMENT_MULTISAFEPAY_TITLES_ICON_DISABLED == 'True') {
-                $title = $this->generateIcon($this->getIcon()) . " " . $title;
+                $title = $this->generateIcon($this->getIcon()) . " " . $this->getRealTitle($title);
             }
             return $title;
         }
 
         /**
-         *
-         * @param type $str
-         * @return type
+         * @return string
          */
-        function getLangStr($str)
+        public function getRealTitle($title)
         {
-            switch ($str) {
-                //Payment methods
-                case "E-Invoicing":
-                    return MODULE_PAYMENT_MSP_EINVOICE_TEXT_TITLE;
-
-                case "Betaal Na Ontvangst":
-                case "Pay After Delivery":
-                case "Payer après livraison":
-                case "Bezahlen nach Anlieferung":
-                case "Pagamento dopo ricevuta":
-                case "Pague después de la entrega":
-                    return MODULE_PAYMENT_MSP_PAYAFTER_TEXT_TITLE;
-
-                case "Klarna":
-                    return MODULE_PAYMENT_MSP_KLARNA_TEXT_TITLE;
-                case "AfterPay":
-                    return MODULE_PAYMENT_MSP_AFTERPAY_TEXT_TITLE;
-                case "Santander Consumer Finance | Betaal per Maand":
-                case "Santander Consumer Finance | Pay per Month":
-
-                    if (MODULE_PAYMENT_MULTISAFEPAY_TITLES_ICON_DISABLED == 'False') {
-                        return MODULE_PAYMENT_MSP_SANTANDER_TEXT_TITLE;
-                    }else {
-                        return MODULE_PAYMENT_MSP_SANTANDER_SHORT_TEXT_TITLE;
-                    }
-
-                case "title":
-                    return MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE;
-                case "iDEAL":
-                    return MODULE_PAYMENT_MSP_IDEAL_TEXT_TITLE;
-                case "Banktransfer":
-                case "Virement bancaire":
-                case "Bankoverboeking":
-                case "Banküberweisung":
-                case "Transferencia bancaria":
-                case "Bonifico bancario":
-                case "Transferência Bancária":
-                    return MODULE_PAYMENT_MSP_BANKTRANS_TEXT_TITLE;
-                case "Giropay":
-                    return MODULE_PAYMENT_MSP_GIROPAY_TEXT_TITLE;
-                case "VISA":
-                    return MODULE_PAYMENT_MSP_VISA_TEXT_TITLE;
-                case "Direct Debit":
-                case "Prélèvement automatique":
-                case "Eenmalige machtiging":
-                case "Lastschrift":
-                case "Débito Directo":
-                case "Addebito diretto":
-                case "Débito Direto":
-                    return MODULE_PAYMENT_MSP_DIRDEB_TEXT_TITLE;
-                case "Bancontact":
-                    return MODULE_PAYMENT_MSP_BANCONTACT_TEXT_TITLE;
-                case "MasterCard":
-                    return MODULE_PAYMENT_MSP_MASTERCARD_TEXT_TITLE;
-                case "PayPal":
-                    return MODULE_PAYMENT_MSP_PAYPAL_TEXT_TITLE;
-                case "Maestro":
-                    return MODULE_PAYMENT_MSP_MAESTRO_TEXT_TITLE;
-                case "SOFORT Banking":
-                case "SOFORT Überweisung":
-                    return MODULE_PAYMENT_MSP_SOFORT_TEXT_TITLE;
-                case "American Express":
-                    return MODULE_PAYMENT_MSP_AMEX_TEXT_TITLE;
-                case "Dotpay":
-                    return MODULE_PAYMENT_MSP_DOTPAY_TEXT_TITLE;
-                case "EPS":
-                    return MODULE_PAYMENT_MSP_EPS_TEXT_TITLE;
-                case "PaySafeCard":
-                    return MODULE_PAYMENT_MSP_PAYSAFECARD_TEXT_TITLE;
-                case "Direct Bank Transfer":
-                    return MODULE_PAYMENT_MSP_DIRECTBANKTRANSFER_TEXT_TITLE;
-                case "Belfius":
-                    return MODULE_PAYMENT_MSP_BELFIUS_TEXT_TITLE;
-                case "ING Home'Pay":
-                    return MODULE_PAYMENT_MSP_ING_TEXT_TITLE;
-                case "KBC":
-                    return MODULE_PAYMENT_MSP_KBC_TEXT_TITLE;
-                case "Alipay":
-                    return MODULE_PAYMENT_MSP_ALIPAY_TEXT_TITLE;
-                case "Trustly":
-                    return MODULE_PAYMENT_MSP_TRUSTLY_TEXT_TITLE;
-                case "Apple Pay":
-                    return MODULE_PAYMENT_MSP_APPLEPAY_TEXT_TITLE;
-                //Giftcards
-                case "Beauty & Wellness Cadeau":
-                    return MODULE_PAYMENT_MSP_BEAUTYANDWELLNESS_TEXT_TITLE;
-                case "Boekenbon":
-                    return MODULE_PAYMENT_MSP_BOEKENBON_TEXT_TITLE;
-                case "FashionCheque":
-                    return MODULE_PAYMENT_MSP_FASHIONCHEQUE_TEXT_TITLE;
-                case "Fashion Giftcard":
-                    return MODULE_PAYMENT_MSP_FASHIONGIFTCARD_TEXT_TITLE;
-                case "Bloemen Cadeaubon":
-                    return MODULE_PAYMENT_MSP_BLOEMENCADEAUBON_TEXT_TITLE;
-                case "De Grote Speelgoedwinkel":
-                    return MODULE_PAYMENT_MSP_DGSGW_TEXT_TITLE;
-                case "Brouwmarkt":
-                    return MODULE_PAYMENT_MSP_BROUWMARKT_TEXT_TITLE;
-                case "Fietsenbon":
-                    return MODULE_PAYMENT_MSP_FIETSENBON_TEXT_TITLE;
-                case "GivaCard":
-                    return MODULE_PAYMENT_MSP_GIVACARD_TEXT_TITLE;
-                case "Good Card":
-                    return MODULE_PAYMENT_MSP_GOODCARD_TEXT_TITLE;
-                case "GezondheidsBon":
-                    return MODULE_PAYMENT_MSP_GEZONDHEIDSBON_TEXT_TITLE;
-                case "Webshop Giftcard":
-                    return MODULE_PAYMENT_MSP_WEBSHOPGIFTCARD_TEXT_TITLE;
-                case "Wijn Cadeaukaart":
-                    return MODULE_PAYMENT_MSP_WIJNCADEAU_TEXT_TITLE;
-                case "Podium":
-                    return MODULE_PAYMENT_MSP_PODIUM_TEXT_TITLE;
-                case "YourGift":
-                    return MODULE_PAYMENT_MSP_YOURGIFT_TEXT_TITLE;
-                case "Winkel Cheque":
-                    return MODULE_PAYMENT_MSP_WINKELCHEQUE_TEXT_TITLE;
-                case "Sport&Fit Cadeau":
-                    return MODULE_PAYMENT_MSP_SPORTNFIT_TEXT_TITLE;
-                case "Parfum Cadeaukaart":
-                    return MODULE_PAYMENT_MSP_PARFUMCADEAUKAART_TEXT_TITLE;
-                case "Jewelstore Giftcard":
-                    return MODULE_PAYMENT_MSP_JEWELSTORE_TEXT_TITLE;
-                case "Kelly Giftcard":
-                    return MODULE_PAYMENT_MSP_KELLYGIFTCARD_TEXT_TITLE;
-                case "VVV Giftcard":
-                    return MODULE_PAYMENT_MSP_VVVGIFTCARD_TEXT_TITLE;
-                case "Nationale Tuinbon":
-                    return MODULE_PAYMENT_MSP_TUINBON_TEXT_TITLE;
-                case "Wellness Giftcard":
-                    return MODULE_PAYMENT_MSP_WELLNESS_TEXT_TITLE;
-                case MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE:
-                    return MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE;
-                    break;
+            // Santander needs short description if icons are enabled
+            if (stripos($title, 'Santander') !== false) {
+                return MODULE_PAYMENT_MSP_SANTANDER_SHORT_TEXT_TITLE;
             }
+            return $title;
         }
 
         /**
