@@ -10,8 +10,8 @@
  *
  * @category    MultiSafepay
  * @package     Connect
- * @author      TechSupport <techsupport@multisafepay.com>
- * @copyright   Copyright (c) 2017 MultiSafepay, Inc. (http://www.multisafepay.com)
+ * @author      MultiSafepay <integration@multisafepay.com>
+ * @copyright   Copyright (c) MultiSafepay, Inc. (https://www.multisafepay.com)
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
@@ -21,86 +21,38 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-require( "multisafepay.php" );
+require_once('multisafepay.php');
 
-class multisafepay_ideal extends multisafepay
+class multisafepay_ideal extends MultiSafepay
 {
+    public $icon = "ideal.png";
 
-    var $icon = "ideal.png";
-    var $issuer = '';
-
-    /*
-     * Constructor
-     */
-
-    function __construct()
+    public function __construct()
     {
         global $order;
 
         $this->code = 'multisafepay_ideal';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_IDEAL_TEXT_TITLE);
-        $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
+        $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;" . $this->plugin_ver . '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
         $this->enabled = MODULE_PAYMENT_MSP_IDEAL_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_IDEAL_SORT_ORDER;
 
         if (is_object($order)) {
             $this->update_status();
         }
-
-        $this->status = MODULE_PAYMENT_MSP_IDEAL_STATUS == 'True';
-
-        if ($_SESSION['currency'] != 'EUR') {
-            $this->enabled = false;
-        }
     }
 
     /**
-     * 
-     * @return type
+     *
      */
-    function create_iDeal_box()
-    {
-        try {
-            $msp = new MultiSafepayAPI\Client();
-
-            if (MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live' || MODULE_PAYMENT_MULTISAFEPAY_API_SERVER == 'Live account') {
-                $api_url = "https://api.multisafepay.com/v1/json/";
-            } else {
-                $api_url = "https://testapi.multisafepay.com/v1/json/";
-            }
-
-            $msp->setApiUrl($api_url);
-            $msp->setApiKey(MODULE_PAYMENT_MULTISAFEPAY_API_KEY);
-
-            $ideal_issuers = $msp->issuers->get();
-
-            $output = '<div class="idealbox" style="padding:20px;border:1px solid #d50172; margin-top:20px;text-align:center">';
-            $output .= '<img src="images/multisafepay/en/ideal-big.png" border="0" width="113" height="88"/><br /><br />';
-            $output .= "<select name='msp_issuer' style='width:164px; padding: 2px; margin-left: 7px;'>";
-            $output .='<option value="">Select your bank</option>';
-
-            foreach ($ideal_issuers as $issuer) {
-                $output .= '<option value="' . $issuer->code . '">' . $issuer->description . '</option>';
-            }
-
-            $output .= '</select><div style="clear:both;"></div></div><br />';
-            return ($output);
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-    /*
-     * Check whether this payment module is available
-     */
-
-    function update_status()
+    public function update_status()
     {
         global $order, $db;
+        $allowed_countries = ['NL'];
 
-        if (($this->enabled == true) && ((int) MODULE_PAYMENT_MSP_IDEAL_ZONE > 0)) {
+        if (($this->enabled == true) && ((int)MODULE_PAYMENT_MSP_IDEAL_ZONE > 0)) {
             $check_flag = false;
-            $check_query = $db->Execute("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . MODULE_PAYMENT_MSP_IDEAL_ZONE . "' and zone_country_id = '" . $order->billing['country']['id'] . "' order by zone_id");
+            $check_query = $db->Execute("SELECT zone_id FROM " . TABLE_ZONES_TO_GEO_ZONES . " WHERE geo_zone_id = '" . MODULE_PAYMENT_MSP_IDEAL_ZONE . "' AND zone_country_id = '" . $order->billing['country']['id'] . "' ORDER BY zone_id");
             while (!$check_query->EOF) {
                 if ($check_query->fields['zone_id'] < 1) {
                     $check_flag = true;
@@ -114,66 +66,129 @@ class multisafepay_ideal extends multisafepay
 
             if ($check_flag == false) {
                 $this->enabled = false;
+                return;
             }
         }
+
+        if ($_SESSION['currency'] != 'EUR') {
+            $this->enabled = false;
+            return;
+        }
+    }
+
+
+    /**
+     * @return array
+     */
+    public function selection()
+    {
+        $onFocus = ' onfocus="methodSelect(\'pmt-' . $this->code . '\')"';
+
+        try {
+            $msp = new MultiSafepayAPI\Client();
+            $api_url = $this->get_api_url();
+
+            $msp->setApiUrl($api_url);
+            $msp->setApiKey($this->get_api_key());
+            $issuersObj = $msp->issuers->get();
+
+        } catch (Exception $e) {
+            $this->_error_redirect(htmlspecialchars($e->getMessage()));
+            die;
+        }
+
+        $issuers[] = ['id' => '', 'text'=> MODULE_PAYMENT_MSP_IDEAL_CHOOSE_BANK];
+
+        foreach ($issuersObj as $issuer) {
+            $issuers[] = ['id' => $issuer->code, 'text' => $issuer->description];
+        }
+
+        return array(
+            'id' => $this->code,
+            'module' => $this->title,
+            'fields' => array(
+                array('title' => MODULE_PAYMENT_MSP_IDEAL_CHOOSE_BANK,
+                    'field' => zen_draw_pull_down_menu('ideal_issuer', $issuers, '', 'id="ideal_issuer"' . $onFocus),
+                    'tag' => 'ideal_issuer')
+            )
+        );
     }
 
     /**
-     * 
-     * @return type
+     * @return string
      */
-    function process_button()
+    public function process_button()
     {
-        if (MODULE_PAYMENT_MSP_IDEAL_DIRECT == 'True') {
-            return zen_draw_hidden_field('msp_paymentmethod', 'IDEAL') . $this->create_iDeal_box();
-        } else {
-            return zen_draw_hidden_field('msp_paymentmethod', 'IDEAL');
-        }
+        return (
+            zen_draw_hidden_field('msp_paymentmethod', 'IDEAL') .
+            zen_draw_hidden_field('ideal_issuer', $_POST['ideal_issuer'])
+        );
     }
 
-    /*
-     * Checks whether the payment has been “installed” through the admin panel
+    /**
+     * @return int
      */
-
-    function check()
+    public function check()
     {
         global $db;
         if (!isset($this->_check)) {
-            $check_query = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MSP_IDEAL_STATUS'");
-            $this->_check = $check_query->RecordCount();
+            $checkQuery = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MSP_IDEAL_STATUS'");
+            $this->_check = $checkQuery->RecordCount();
         }
         return $this->_check;
     }
 
-    /*
-     * Installs the configuration keys into the database
-     */
 
-    function install()
+    public function prepare_transaction()
     {
-        global $db;
-
-        $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable MultiSafepay iDEAL Module', 'MODULE_PAYMENT_MSP_IDEAL_STATUS', 'True', '', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
-        $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Sort order of display.', 'MODULE_PAYMENT_MSP_IDEAL_SORT_ORDER', '0', 'Sort order of display. Lowest is displayed first.', '6', '0', now())");
-        $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) values ('Payment Zone', 'MODULE_PAYMENT_MSP_IDEAL_ZONE', '0', 'If a zone is selected, only enable this payment method for that zone.', '6', '3', 'zen_get_zone_class_title', 'zen_cfg_pull_down_zone_classes(', now())");
-        $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable Direct iDEAL', 'MODULE_PAYMENT_MSP_IDEAL_DIRECT', 'True', 'Enable the selection of iDEAL banks in the webshop', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
-    }
-
-    /**
-     * 
-     * @return type
-     */
-    function keys()
-    {
-        return array
-            (
-            'MODULE_PAYMENT_MSP_IDEAL_STATUS',
-            'MODULE_PAYMENT_MSP_IDEAL_SORT_ORDER',
-            'MODULE_PAYMENT_MSP_IDEAL_ZONE',
-            'MODULE_PAYMENT_MSP_IDEAL_DIRECT'
+        $this->trans_type = 'direct';
+        $this->gateway_info = array(
+            "issuer_id" => $_POST['ideal_issuer'],
+            "referrer" => $_SERVER['HTTP_REFERER'],
+            "user_agent" => $_SERVER['HTTP_USER_AGENT'],
+            "email" => $GLOBALS['order']->customer['email_address']
         );
     }
 
-}
+    public function updateConfig()
+    {
+        global $db;
 
-?>
+        $oldKeys = implode("', '", $this->oldKeys());
+
+        // Remove old configuration if exists
+        $sql = "DELETE FROM %s WHERE configuration_key IN ('%s')";
+        $db->Execute(sprintf($sql, TABLE_CONFIGURATION, $oldKeys));
+    }
+
+
+    public function install()
+    {
+        global $db;
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Enable MultiSafepay iDEAL', 'MODULE_PAYMENT_MSP_IDEAL_STATUS', 'True', 'Do you want to accept iDEAL payments?', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Sort order of display.', 'MODULE_PAYMENT_MSP_IDEAL_SORT_ORDER', '0', 'Sort order of display. Lowest is displayed first.', '6', '0', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) VALUES ('Payment Zone', 'MODULE_PAYMENT_MSP_IDEAL_ZONE', '0', 'If a zone is selected, only enable this payment method for that zone.', '6', '3', 'zen_get_zone_class_title', 'zen_cfg_pull_down_zone_classes(', now())");
+    }
+
+    /**
+     * @return string[]
+     */
+    public function keys()
+    {
+        return array(
+            'MODULE_PAYMENT_MSP_IDEAL_STATUS',
+            'MODULE_PAYMENT_MSP_IDEAL_SORT_ORDER',
+            'MODULE_PAYMENT_MSP_IDEAL_ZONE'
+        );
+    }
+
+    /**
+     * @return string[]
+     */
+    public function oldKeys()
+    {
+        return array(
+            'MODULE_PAYMENT_MSP_IDEAL_DIRECT',
+        );
+    }
+}
