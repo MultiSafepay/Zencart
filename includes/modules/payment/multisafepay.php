@@ -497,61 +497,40 @@ if (!class_exists('multisafepay')) {
         }
 
 
-
         /**
+         * Split the address into street and house number with extension.
          *
-         * @param type $street_address
-         * @return type
+         * @param string $address1
+         * @param string $address2
+         * @return array
          */
-        public function parseAddress($street_address)
+        public function parseAddress($address1, $address2 = '')
         {
-            $address = $street_address;
-            $apartment = "";
+            // Trim the addresses
+            $address1 = trim($address1);
+            $address2 = trim($address2);
+            $fullAddress = trim("{$address1} {$address2}");
+            $fullAddress = preg_replace("/[[:blank:]]+/", ' ', $fullAddress);
 
-            $offset = strlen($street_address);
+            // Make array of all regex matches
+            $matches = [];
 
-            while (($offset = $this->rstrpos($street_address, ' ', $offset)) !== false) {
-                if ($offset < strlen($street_address) - 1 && is_numeric($street_address[$offset + 1])) {
-                    $address = trim(substr($street_address, 0, $offset));
-                    $apartment = trim(substr($street_address, $offset + 1));
-                    break;
-                }
-            }
+            /**
+             * Regex part one: Add all before number.
+             * If number contains whitespace, Add it also to street.
+             * All after that will be added to apartment
+             */
+            $pattern = '/(.+?)\s?([\d]+[\S]*)(\s?[A-z]*?)$/';
+            preg_match($pattern, $fullAddress, $matches);
 
-            if (empty($apartment) && strlen($street_address) > 0 && is_numeric($street_address[0])) {
-                $pos = strpos($street_address, ' ');
+            //Save the street and apartment and trim the result
+            $street = isset($matches[1]) ? $matches[1] : '';
+            $apartment = isset($matches[2]) ? $matches[2] : '';
+            $extension = isset($matches[3]) ? $matches[3] : '';
+            $street = trim($street);
+            $apartment = trim($apartment . $extension);
 
-                if ($pos !== false) {
-                    $apartment = trim(substr($street_address, 0, $pos), ", \t\n\r\0\x0B");
-                    $address = trim(substr($street_address, $pos + 1));
-                }
-            }
-
-            return array($address, $apartment);
-        }
-
-        /**
-         *
-         * @param type $haystack
-         * @param type $needle
-         * @param type $offset
-         * @return boolean
-         */
-        public function rstrpos($haystack, $needle, $offset = null)
-        {
-            $size = strlen($haystack);
-
-            if (is_null($offset)) {
-                $offset = $size;
-            }
-
-            $pos = strpos(strrev($haystack), strrev($needle), $size - $offset);
-
-            if ($pos === false) {
-                return false;
-            }
-
-            return $size - $pos - strlen($needle);
+            return [$street, $apartment];
         }
 
         /**
