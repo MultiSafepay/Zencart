@@ -793,89 +793,6 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         * Ripped from includes/functions/general.php
-         *
-         * @param type $address_format_id
-         * @param string $address
-         * @param type $html
-         * @param type $boln
-         * @param type $eoln
-         * @return string
-         */
-        function _address_format($address_format_id, $address, $html, $boln, $eoln)
-        {
-            $address_format_query = $db->Execute("SELECT address_format AS format FROM " . TABLE_ADDRESS_FORMAT . " WHERE address_format_id = '" . (int) $address_format_id . "'");
-            $address_format = $address_format_query; //zen_db_fetch_array($address_format_query);
-
-            $company = $this->_output_string_protected($address['company']);
-            if (isset($address['firstname']) && zen_not_null($address['firstname'])) {
-                $firstname = $this->_output_string_protected($address['firstname']);
-                $lastname = $this->_output_string_protected($address['lastname']);
-            } elseif (isset($address['name']) && zen_not_null($address['name'])) {
-                $firstname = $this->_output_string_protected($address['name']);
-                $lastname = '';
-            } else {
-                $firstname = '';
-                $lastname = '';
-            }
-            $street = $this->_output_string_protected($address['street_address']);
-            $suburb = $this->_output_string_protected($address['suburb']);
-            $city = $this->_output_string_protected($address['city']);
-            $state = $this->_output_string_protected($address['state']);
-            if (isset($address['country_id']) && zen_not_null($address['country_id'])) {
-                $country = zen_get_country_name($address['country_id']);
-                if (isset($address['zone_id']) && zen_not_null($address['zone_id'])) {
-                    $state = zen_get_zone_code($address['country_id'], $address['zone_id'], $state);
-                }
-            } elseif (isset($address['country']) && zen_not_null($address['country'])) {
-                if (is_array($address['country'])) {
-                    $country = $this->_output_string_protected($address['country']['title']);
-                } else {
-                    $country = $this->_output_string_protected($address['country']);
-                }
-            } else {
-                $country = '';
-            }
-            $postcode = $this->_output_string_protected($address['postcode']);
-            $zip = $postcode;
-
-            if ($html) {
-                // HTML Mode
-                $HR = '<hr>';
-                $hr = '<hr>';
-                if (($boln == '') && ($eoln == "\n")) { // Values not specified, use rational defaults
-                    $CR = '<br>';
-                    $cr = '<br>';
-                    $eoln = $cr;
-                } else { // Use values supplied
-                    $CR = $eoln . $boln;
-                    $cr = $CR;
-                }
-            } else {
-                // Text Mode
-                $CR = $eoln;
-                $cr = $CR;
-                $HR = '----------------------------------------';
-                $hr = '----------------------------------------';
-            }
-
-            $statecomma = '';
-            $streets = $street;
-            if ($suburb != '')
-                $streets = $street . $cr . $suburb;
-            if ($state != '')
-                $statecomma = $state . ', ';
-
-            $fmt = $address_format['format'];
-            eval("\$address = \"$fmt\";");
-
-            if ((ACCOUNT_COMPANY == 'true') && (zen_not_null($company))) {
-                $address = $company . $cr . $address;
-            }
-            return $address;
-        }
-
-        /**
          *
          * @param type $string
          * @param type $translate
@@ -992,8 +909,6 @@ if (!class_exists('multisafepay')) {
 
             return $link;
         }
-
-        // ---- installation & configuration ----
 
         /*
          * Checks whether the payment has been “installed” through the admin panel
@@ -1170,62 +1085,6 @@ if (!class_exists('multisafepay')) {
         {
             return strtolower($_SESSION['languages_code']);
         }
-
-        /**
-         * Return locale language code based on $lang provided
-         *
-         * @param type $lang
-         * @return string
-         */
-        function getlocale($lang)
-        {
-            switch ($lang) {
-                case "dutch":
-                    $lang = 'nl_NL';
-                    break;
-                case "spanish":
-                    $lang = 'es_ES';
-                    break;
-                case "french":
-                    $lang = 'fr_FR';
-                    break;
-                case "italian":
-                case "italiano":
-                    $lang = 'it_IT';
-                    break;
-                case "portuguese":
-                    $lang = 'pt_PT';
-                    break;
-                case "german":
-                    $lang = 'de_DE';
-                    break;
-                case "english":
-                    $lang = 'en_GB';
-                    break;
-                default:
-                    $lang = 'en_GB';
-                    break;
-            }
-
-            return $lang;
-        }
-
-        /**
-         *
-         * @param type $country
-         * @return type
-         */
-        function getcountry($country)
-        {
-            if (empty($country)) {
-                $langcode = explode(";", $_SERVER['HTTP_ACCEPT_LANGUAGE']);
-                $langcode = explode(",", $langcode['0']);
-                return strtoupper($langcode['1']);
-            } else {
-                return strtoupper($country);
-            }
-        }
-
 
         /**
          * call setTransactionStatusToShipped if orderstatus is set to Delivered (3)
