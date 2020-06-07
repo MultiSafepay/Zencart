@@ -32,6 +32,7 @@ class multisafepay_ideal extends MultiSafepay
         global $order;
 
         $this->code = 'multisafepay_ideal';
+        $this->gateway = 'IDEAL';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_IDEAL_TEXT_TITLE);
         $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;" . $this->plugin_ver . '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
         $this->enabled = MODULE_PAYMENT_MSP_IDEAL_STATUS == 'True';
@@ -119,10 +120,7 @@ class multisafepay_ideal extends MultiSafepay
      */
     public function process_button()
     {
-        return (
-            zen_draw_hidden_field('msp_paymentmethod', 'IDEAL') .
-            zen_draw_hidden_field('ideal_issuer', $_POST['ideal_issuer'])
-        );
+        return zen_draw_hidden_field('ideal_issuer', $_POST['ideal_issuer']);
     }
 
     /**

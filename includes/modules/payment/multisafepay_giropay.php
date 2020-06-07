@@ -15,6 +15,7 @@ class multisafepay_giropay extends multisafepay
     {
         global $order;
         $this->code = 'multisafepay_giropay';
+        $this->gateway = 'GIROPAY';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_GIROPAY_TEXT_TITLE);
         $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
         $this->enabled = MODULE_PAYMENT_MSP_GIROPAY_STATUS == 'True';
@@ -52,12 +53,6 @@ class multisafepay_giropay extends multisafepay
                 $this->enabled = false;
             }
         }
-    }
-
-    function process_button()
-    {
-
-        return zen_draw_hidden_field('msp_paymentmethod', 'GIROPAY');
     }
 
     /*

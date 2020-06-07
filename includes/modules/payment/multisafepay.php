@@ -28,6 +28,7 @@ if (!class_exists('multisafepay')) {
     class multisafepay
     {
         var $code;
+        protected $gateway;
         var $title;
         var $description;
         var $enabled;
@@ -51,6 +52,7 @@ if (!class_exists('multisafepay')) {
             global $order;
 
             $this->code = 'multisafepay';
+            $this->gateway = '';
             $this->title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE);
             $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
             $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_STATUS == 'True';
@@ -136,16 +138,6 @@ if (!class_exists('multisafepay')) {
             return false;
         }
 
-        /*
-         * Outputs the html form hidden elements sent as POST data to the payment
-         * gateway
-         */
-
-        function process_button()
-        {
-            return zen_draw_hidden_field('msp_paymentmethod', '');
-        }
-
         function before_process()
         {
             $GLOBALS['order']->info['payment_method'] = trim(strip_tags($GLOBALS['order']->info['payment_method']));
@@ -179,7 +171,6 @@ if (!class_exists('multisafepay')) {
             $this->api_key = $this->get_api_key();
             $this->api_url = $this->get_api_url();
             $this->redirect_url = $this->get_redirect_url();
-            $this->gateway = $_POST['msp_paymentmethod'];
             $this->order_id = $insert_id;
 
             $order = $GLOBALS['order'];

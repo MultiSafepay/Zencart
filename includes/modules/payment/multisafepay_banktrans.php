@@ -37,6 +37,7 @@ class multisafepay_banktrans extends multisafepay
         global $order;
 
         $this->code = 'multisafepay_banktrans';
+        $this->gateway = 'BANKTRANS';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_BANKTRANS_TEXT_TITLE);
         $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
         $this->enabled = MODULE_PAYMENT_MSP_BANKTRANS_STATUS == 'True';
@@ -73,15 +74,6 @@ class multisafepay_banktrans extends multisafepay
                 $this->enabled = false;
             }
         }
-    }
-
-    /**
-     * 
-     * @return type
-     */
-    function process_button()
-    {
-        return zen_draw_hidden_field('msp_paymentmethod', 'BANKTRANS');
     }
 
     /*

@@ -37,6 +37,7 @@ class multisafepay_santander extends multisafepay
         global $order;
 
         $this->code = 'multisafepay_santander';
+        $this->gateway = 'SANTANDER';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_SANTANDER_TEXT_TITLE);
         $this->description = $this->description = "<img src='images/icon_info.gif' border='0'>&nbsp;<b>MultiSafepay Santander Consumer Finance | Pay per Month</b><BR>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<BR>";
         $this->enabled = MODULE_PAYMENT_MSP_SANTANDER_STATUS == 'True';
@@ -73,12 +74,6 @@ class multisafepay_santander extends multisafepay
                 $this->enabled = false;
             }
         }
-    }
-
-    function process_button()
-    {
-
-        return zen_draw_hidden_field('msp_paymentmethod', 'SANTANDER');
     }
 
     /*

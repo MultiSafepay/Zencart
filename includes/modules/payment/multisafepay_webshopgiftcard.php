@@ -37,6 +37,7 @@ class multisafepay_webshopgiftcard extends multisafepay
         global $order;
 
         $this->code = 'multisafepay_webshopgiftcard';
+        $this->gateway = 'WEBSHOPGIFTCARD';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_WEBSHOPGIFTCARD_TEXT_TITLE);
         $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
         $this->enabled = MODULE_PAYMENT_MSP_WEBSHOPGIFTCARD_STATUS == 'True';
@@ -74,15 +75,6 @@ class multisafepay_webshopgiftcard extends multisafepay
                 $this->enabled = false;
             }
         }
-    }
-
-    /**
-     * 
-     * @return type
-     */
-    function process_button()
-    {
-        return zen_draw_hidden_field('msp_paymentmethod', 'WEBSHOPGIFTCARD');
     }
 
     /*
