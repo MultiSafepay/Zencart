@@ -39,7 +39,7 @@ class multisafepay_podium extends multisafepay
         $this->code = 'multisafepay_podium';
         $this->gateway = 'PODIUM';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_PODIUM_TEXT_TITLE);
-        $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
+        $this->description = $this->getDescription();
         $this->enabled = MODULE_PAYMENT_MSP_PODIUM_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_PODIUM_SORT_ORDER;
 

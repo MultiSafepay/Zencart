@@ -54,7 +54,7 @@ if (!class_exists('multisafepay')) {
             $this->code = 'multisafepay';
             $this->gateway = '';
             $this->title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_TEXT_TITLE);
-            $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;v" . $this->plugin_ver .  '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
+            $this->description = $this->getDescription();
             $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_STATUS == 'True';
             $this->sort_order = MODULE_PAYMENT_MULTISAFEPAY_SORT_ORDER;
             $this->order_status = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_INITIALIZED;
@@ -66,6 +66,8 @@ if (!class_exists('multisafepay')) {
             $this->order_id = $order_id;
             $this->status = 1;
         }
+
+
 
         /*
          * Check whether this payment module is available
@@ -989,6 +991,20 @@ if (!class_exists('multisafepay')) {
             }
             return $title;
         }
+
+        /**
+         * @return string|type
+         */
+        public function getDescription()
+        {
+            return (sprintf(
+                "<strong>%s v%s</strong><br>%s<br>",
+                $this->title,
+                $this->plugin_ver,
+                'The main MultiSafepay module must be installed (does not have to be active) to use this payment method.'
+            ));
+        }
+
 
         /**
          * @return string

@@ -34,7 +34,7 @@ class multisafepay_payafter extends MultiSafepay
         $this->code = 'multisafepay_payafter';
         $this->gateway = 'PAYAFTER';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_PAYAFTER_TEXT_TITLE);
-        $this->description = '<strong>' . $this->title . "&nbsp;&nbsp;" . $this->plugin_ver . '</strong><br>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<br>';
+        $this->description = $this->getDescription();
         $this->enabled = MODULE_PAYMENT_MSP_PAYAFTER_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_PAYAFTER_SORT_ORDER;
 
