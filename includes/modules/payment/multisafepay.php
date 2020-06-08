@@ -185,13 +185,6 @@ if (!class_exists('multisafepay')) {
 
             $amount = round($order->info['total'], 2) * 100;
 
-            if ($_POST["msp_issuer"] && $this->gateway == 'IDEAL') {
-                $this->trans_type = "direct";
-                $this->gateway_info = array(
-                    'issuer_id' => $_POST["msp_issuer"]
-                );
-            }
-
             if (MODULE_PAYMENT_MSP_BANKTRANS_DIRECT == 'True' && $this->gateway == 'BANKTRANS') {
                 $this->trans_type = "direct";
             }
