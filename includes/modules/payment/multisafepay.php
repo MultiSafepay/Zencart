@@ -58,6 +58,9 @@ if (!class_exists('multisafepay')) {
             $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_STATUS == 'True';
             $this->sort_order = MODULE_PAYMENT_MULTISAFEPAY_SORT_ORDER;
             $this->order_status = MODULE_PAYMENT_MULTISAFEPAY_ORDER_STATUS_ID_INITIALIZED;
+            $this->paymentFilters = [
+                'zone' => MODULE_PAYMENT_MULTISAFEPAY_ZONE
+            ];
 
             if (is_object($order)) {
                 $this->update_status();
@@ -67,34 +70,78 @@ if (!class_exists('multisafepay')) {
             $this->status = 1;
         }
 
-
-
         /*
-         * Check whether this payment module is available
+         * Check whether this payment module is allowed
          */
 
-        function update_status()
+        public function update_status()
         {
-            global $order, $db;
+            global $order;
 
-            if (($this->enabled == true) && ((int) MODULE_PAYMENT_MULTISAFEPAY_ZONE > 0)) {
-                $check_flag = false;
-                $check_query = $db->Execute("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . MODULE_PAYMENT_MULTISAFEPAY_ZONE . "' and zone_country_id = '" . $order->billing['country']['id'] . "' order by zone_id");
-                while (!$check_query->EOF) {
-                    if ($check_query->fields['zone_id'] < 1) {
-                        $check_flag = true;
+            if ($this->enabled === false) {
+                return;
+            }
+
+            foreach ($this->paymentFilters as $filter => $value) {
+                switch ($filter) {
+                    case 'zone':
+                        $geoZone = (int)$value;
+                        $billing = $order->billing;
+                        if ($geoZone > 0 && isset($billing['country_id'])) {
+                            $this->enabled = $this->isBillingInZone($billing, $geoZone);
+                        }
                         break;
-                    } elseif ($check_query->fields['zone_id'] == $order->billing['zone_id']) {
-                        $check_flag = true;
+
+                    case 'minMaxAmount':
+                        $minAmount = (float)$value['minAmount'];
+                        $maxAmount = (float)$value['maxAmount'];
+                        $orderTotal = (float)$order->info['total'];
+                        $this->enabled = $this->minMaxAmount($minAmount, $maxAmount, $orderTotal);
                         break;
-                    }
-                    $check_query->MoveNext();
+
+                    case 'customerInCountry':
+                        $this->enabled = in_array($order->customer['country']['iso_code_2'], $value, true);
+                        break;
+
+                    case 'deliveryInCountry':
+                        $this->enabled = in_array($order->delivery['country']['iso_code_2'], $value, true);
+                        break;
+
+                    case 'currencies':
+                        $this->enabled = in_array($order->info['currency'], $value, true);
+                        break;
                 }
 
-                if ($check_flag == false) {
-                    $this->enabled = false;
+                if ($this->enabled === false) {
+                    break;
                 }
             }
+        }
+
+        /**
+         * @param $billing
+         * @param $geoZone
+         * @return bool
+         */
+        private function isBillingInZone($billing, $geoZone)
+        {
+            global $db;
+
+            $sql = 'SELECT zone_id FROM ' . TABLE_ZONES_TO_GEO_ZONES . ' WHERE geo_zone_id = :geoZone:' .
+                ' AND zone_country_id = :billingCountry: AND (zone_id IS NULL OR zone_id = :billingZone:)';
+            $sql = $db->bindVars($sql, ':geoZone:', $geoZone, 'integer');
+            $sql = $db->bindVars($sql, ':billingCountry:', $billing['country_id'], 'integer');
+            $sql = $db->bindVars($sql, ':billingZone:', $billing['zone_id'], 'integer');
+            $result = $db->Execute($sql);
+            return $result->RecordCount() !== 0;
+        }
+
+        public function minMaxAmount($minAmount, $maxAmount, $orderTotal)
+        {
+            if (($minAmount > 0 && $orderTotal < $minAmount) || ($maxAmount > 0 && $orderTotal > $maxAmount)) {
+                return false;
+            }
+            return true;
         }
 
 

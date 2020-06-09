@@ -37,46 +37,15 @@ class multisafepay_ideal extends MultiSafepay
         $this->description = $this->getDescription();
         $this->enabled = MODULE_PAYMENT_MSP_IDEAL_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_IDEAL_SORT_ORDER;
+        $this->paymentFilters = [
+            'zone' => MODULE_PAYMENT_MSP_IDEAL_ZONE,
+            'currencies' => ['EUR']
+        ];
 
         if (is_object($order)) {
             $this->update_status();
         }
     }
-
-    /**
-     *
-     */
-    public function update_status()
-    {
-        global $order, $db;
-        $allowed_countries = ['NL'];
-
-        if (($this->enabled == true) && ((int)MODULE_PAYMENT_MSP_IDEAL_ZONE > 0)) {
-            $check_flag = false;
-            $check_query = $db->Execute("SELECT zone_id FROM " . TABLE_ZONES_TO_GEO_ZONES . " WHERE geo_zone_id = '" . MODULE_PAYMENT_MSP_IDEAL_ZONE . "' AND zone_country_id = '" . $order->billing['country']['id'] . "' ORDER BY zone_id");
-            while (!$check_query->EOF) {
-                if ($check_query->fields['zone_id'] < 1) {
-                    $check_flag = true;
-                    break;
-                } elseif ($check_query->fields['zone_id'] == $order->billing['zone_id']) {
-                    $check_flag = true;
-                    break;
-                }
-                $check_query->MoveNext();
-            }
-
-            if ($check_flag == false) {
-                $this->enabled = false;
-                return;
-            }
-        }
-
-        if ($_SESSION['currency'] != 'EUR') {
-            $this->enabled = false;
-            return;
-        }
-    }
-
 
     /**
      * @return array
@@ -92,7 +61,6 @@ class multisafepay_ideal extends MultiSafepay
             $msp->setApiUrl($api_url);
             $msp->setApiKey($this->get_api_key());
             $issuersObj = $msp->issuers->get();
-
         } catch (Exception $e) {
             $this->_error_redirect(htmlspecialchars($e->getMessage()));
             die;

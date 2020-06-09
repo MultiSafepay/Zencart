@@ -42,38 +42,12 @@ class multisafepay_eps extends multisafepay
         $this->description = $this->getDescription();
         $this->enabled = MODULE_PAYMENT_MSP_EPS_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_EPS_SORT_ORDER;
-
+        $this->paymentFilters = [
+            'zone' => MODULE_PAYMENT_MSP_EPS_ZONE
+        ];
 
         if (is_object($order)) {
             $this->update_status();
-        }
-    }
-
-    /*
-     * Check whether this payment module is available
-     */
-
-    function update_status()
-    {
-        global $order, $db;
-
-        if (($this->enabled == true) && ((int) MODULE_PAYMENT_MSP_EPS_ZONE > 0)) {
-            $check_flag = false;
-            $check_query = $db->Execute("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . MODULE_PAYMENT_MSP_EPS_ZONE . "' and zone_country_id = '" . $order->billing['country']['id'] . "' order by zone_id");
-            while (!$check_query->EOF) {
-                if ($check_query->fields['zone_id'] < 1) {
-                    $check_flag = true;
-                    break;
-                } elseif ($check_query->fields['zone_id'] == $order->billing['zone_id']) {
-                    $check_flag = true;
-                    break;
-                }
-                $check_query->MoveNext();
-            }
-
-            if ($check_flag == false) {
-                $this->enabled = false;
-            }
         }
     }
 

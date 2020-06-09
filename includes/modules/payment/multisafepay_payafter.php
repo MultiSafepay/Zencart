@@ -37,65 +37,19 @@ class multisafepay_payafter extends MultiSafepay
         $this->description = $this->getDescription();
         $this->enabled = MODULE_PAYMENT_MSP_PAYAFTER_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_PAYAFTER_SORT_ORDER;
+        $this->paymentFilters = [
+            'zone' => MODULE_PAYMENT_MSP_PAYAFTER_ZONE,
+            'minMaxAmount' => ['minAmount' => MODULE_PAYMENT_MSP_PAYAFTER_MIN_AMOUNT,
+                               'maxAmount' => MODULE_PAYMENT_MSP_PAYAFTER_MAX_AMOUNT],
+            'customerInCountry' => ['NL'],
+            'deliveryInCountry' => ['NL'],
+            'currencies' => ['EUR']
+        ];
 
         if (is_object($order)) {
             $this->update_status();
         }
     }
-
-    /**
-     *
-     */
-    public function update_status()
-    {
-        global $order, $db;
-        $allowed_countries = ['NL'];
-
-        if (($this->enabled == true) && ((int)MODULE_PAYMENT_MSP_PAYAFTER_ZONE > 0)) {
-            $check_flag = false;
-            $check_query = $db->Execute("SELECT zone_id FROM " . TABLE_ZONES_TO_GEO_ZONES . " WHERE geo_zone_id = '" . MODULE_PAYMENT_MSP_PAYAFTER_ZONE . "' AND zone_country_id = '" . $order->billing['country']['id'] . "' ORDER BY zone_id");
-            while (!$check_query->EOF) {
-                if ($check_query->fields['zone_id'] < 1) {
-                    $check_flag = true;
-                    break;
-                } elseif ($check_query->fields['zone_id'] == $order->billing['zone_id']) {
-                    $check_flag = true;
-                    break;
-                }
-                $check_query->MoveNext();
-            }
-
-            if ($check_flag == false) {
-                $this->enabled = false;
-                return;
-            }
-        }
-
-        if (!in_array($order->customer['country']['iso_code_2'], $allowed_countries)) {
-            $this->enabled = false;
-            return;
-        }
-        if (!in_array($order->delivery['country']['iso_code_2'], $allowed_countries)) {
-            $this->enabled = false;
-            return;
-        }
-
-        if ($_SESSION['currency'] != 'EUR') {
-            $this->enabled = false;
-            return;
-        }
-
-        if (isset($order->info['total'])) {
-            $amount = (float) $order->info['total'];
-            $min_amount = (float)MODULE_PAYMENT_MSP_PAYAFTER_MIN_AMOUNT;
-            $max_amount = (float)MODULE_PAYMENT_MSP_PAYAFTER_MAX_AMOUNT;
-
-            if ($amount <= $min_amount || $amount >= $max_amount) {
-                $this->enabled = false;
-            }
-        }
-    }
-
 
     /**
      * @return array
@@ -122,7 +76,6 @@ class multisafepay_payafter extends MultiSafepay
             )
         );
     }
-
 
     /**
      * @return string
