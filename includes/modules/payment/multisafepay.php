@@ -97,6 +97,16 @@ if (!class_exists('multisafepay')) {
             }
         }
 
+
+        /**
+         * @return bool
+         */
+        public function process_button()
+        {
+            return false;
+        }
+
+
         // ---- select payment module ----
 
         /*
