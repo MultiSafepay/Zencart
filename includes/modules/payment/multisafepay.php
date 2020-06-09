@@ -195,10 +195,6 @@ if (!class_exists('multisafepay')) {
 
             $amount = round($order->info['total'], 2) * 100;
 
-            if (MODULE_PAYMENT_MSP_BANKTRANS_DIRECT == 'True' && $this->gateway == 'BANKTRANS') {
-                $this->trans_type = "direct";
-            }
-
             if (isset($order->customer['firstname'])) {
                 list($cust_street, $cust_housenumber) = $this->parseAddress($order->customer['street_address']);
                 $locale = strtolower($order->customer['country']['iso_code_2']) . '_' . $order->customer['country']['iso_code_2'];

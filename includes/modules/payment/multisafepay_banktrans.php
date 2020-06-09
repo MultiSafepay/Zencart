@@ -84,11 +84,30 @@ class multisafepay_banktrans extends multisafepay
     {
         global $db;
         if (!isset($this->_check)) {
+            $this->updateConfig();
+
             $check_query = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MSP_BANKTRANS_STATUS'");
             $this->_check = $check_query->RecordCount();
         }
         return $this->_check;
     }
+
+    public function prepare_transaction()
+    {
+        $this->trans_type = 'direct';
+    }
+
+    public function updateConfig()
+    {
+        global $db;
+
+        $oldKeys = implode("', '", $this->oldKeys());
+
+        // Remove old configuration options if exists
+        $sql = "DELETE FROM %s WHERE configuration_key IN ('%s')";
+        $db->Execute(sprintf($sql, TABLE_CONFIGURATION, $oldKeys));
+    }
+
 
     /*
      * Installs the configuration keys into the database
@@ -101,7 +120,6 @@ class multisafepay_banktrans extends multisafepay
         $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable MultiSafepay Banktransfer Module', 'MODULE_PAYMENT_MSP_BANKTRANS_STATUS', 'True', 'Do you want to accept Banktransfer payments?', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
         $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Sort order of display.', 'MODULE_PAYMENT_MSP_BANKTRANS_SORT_ORDER', '0', 'Sort order of display. Lowest is displayed first.', '6', '0', now())");
         $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) values ('Payment Zone', 'MODULE_PAYMENT_MSP_BANKTRANS_ZONE', '0', 'If a zone is selected, only enable this payment method for that zone.', '6', '3', 'zen_get_zone_class_title', 'zen_cfg_pull_down_zone_classes(', now())");
-        $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable Direct Banktransfer', 'MODULE_PAYMENT_MSP_BANKTRANS_DIRECT', 'True', 'Enable to skip the MultiSafepay banktransfer page.', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
     }
 
     /**
@@ -114,11 +132,18 @@ class multisafepay_banktrans extends multisafepay
             (
             'MODULE_PAYMENT_MSP_BANKTRANS_STATUS',
             'MODULE_PAYMENT_MSP_BANKTRANS_SORT_ORDER',
-            'MODULE_PAYMENT_MSP_BANKTRANS_ZONE',
-            'MODULE_PAYMENT_MSP_BANKTRANS_DIRECT'
+            'MODULE_PAYMENT_MSP_BANKTRANS_ZONE'
         );
     }
 
-}
 
-?>
+    /**
+     * @return string[]
+     */
+    public function oldKeys()
+    {
+        return array(
+            'MODULE_PAYMENT_MSP_BANKTRANS_DIRECT'
+        );
+    }
+}
