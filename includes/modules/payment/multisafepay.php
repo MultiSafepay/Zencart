@@ -881,15 +881,29 @@ if (!class_exists('multisafepay')) {
             return $link;
         }
 
-        /*
-         * Checks whether the payment has been “installed” through the admin panel
+        /**
+         * Checks whether all the payment options are available in the database as indication that
+         * the payment method is installed correct through the admin panel
+         *
+         * @return bool
          */
-        function check()
+
+        public function check()
         {
             global $db;
             if (!isset($this->_check)) {
-                $check_query = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MULTISAFEPAY_STATUS'");
-                $this->_check = $check_query->RecordCount();
+                // If exists, remove old configuration options
+                if (method_exists($this, 'oldKeys')) {
+                    $this->updateConfig();
+                }
+
+                $keys = $this->keys();
+                $sql = "SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = :key:";
+                $sql = $db->bindVars($sql, ':key:', $keys[0], 'string');
+
+                $result = $db->Execute($sql);
+
+                $this->_check = $result->RecordCount() !== 0;
             }
             return $this->_check;
         }

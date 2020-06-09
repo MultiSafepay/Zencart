@@ -137,22 +137,6 @@ class multisafepay_payafter extends MultiSafepay
     }
 
 
-    /**
-     * @return int
-     */
-    public function check()
-    {
-        global $db;
-        if (!isset($this->_check)) {
-            $this->updateConfig();
-
-            $checkQuery = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MSP_PAYAFTER_STATUS'");
-            $this->_check = $checkQuery->RecordCount();
-        }
-        return $this->_check;
-    }
-
-
     public function prepare_transaction()
     {
         $this->trans_type = 'direct';

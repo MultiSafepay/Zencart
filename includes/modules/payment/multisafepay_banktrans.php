@@ -76,22 +76,6 @@ class multisafepay_banktrans extends multisafepay
         }
     }
 
-    /*
-     * Checks whether the payment has been “installed” through the admin panel
-     */
-
-    function check()
-    {
-        global $db;
-        if (!isset($this->_check)) {
-            $this->updateConfig();
-
-            $check_query = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MSP_BANKTRANS_STATUS'");
-            $this->_check = $check_query->RecordCount();
-        }
-        return $this->_check;
-    }
-
     public function prepare_transaction()
     {
         $this->trans_type = 'direct';

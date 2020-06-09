@@ -67,22 +67,6 @@ class multisafepay_klarna extends multisafepay
         }
     }
 
-    /**
-     * @return int
-     */
-    public function check()
-    {
-        global $db;
-
-        if (!isset($this->_check)) {
-            $this->updateConfig();
-
-            $check_query = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MSP_KLARNA_STATUS'");
-            $this->_check = $check_query->RecordCount();
-        }
-        return $this->_check;
-    }
-
     public function updateConfig()
     {
         global $db;

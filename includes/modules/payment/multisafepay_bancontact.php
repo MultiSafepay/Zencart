@@ -77,19 +77,6 @@ class multisafepay_bancontact extends multisafepay
         }
     }
 
-    /*
-     * Checks whether the payment has been “installed” through the admin panel
-     */
-
-    function check()
-    {
-        global $db;
-        if (!isset($this->_check)) {
-            $check_query = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MSP_BANCONTACT_STATUS'");
-            $this->_check = $check_query->RecordCount();
-        }
-        return $this->_check;
-    }
 
     /*
      * Installs the configuration keys into the database

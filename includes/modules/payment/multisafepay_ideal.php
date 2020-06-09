@@ -123,20 +123,6 @@ class multisafepay_ideal extends MultiSafepay
         return zen_draw_hidden_field('ideal_issuer', $_POST['ideal_issuer']);
     }
 
-    /**
-     * @return int
-     */
-    public function check()
-    {
-        global $db;
-        if (!isset($this->_check)) {
-            $checkQuery = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MSP_IDEAL_STATUS'");
-            $this->_check = $checkQuery->RecordCount();
-        }
-        return $this->_check;
-    }
-
-
     public function prepare_transaction()
     {
         $this->trans_type = 'direct';
