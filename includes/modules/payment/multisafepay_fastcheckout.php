@@ -1857,6 +1857,15 @@ class multisafepay_fastcheckout extends MultiSafepay
         }
     }
 
+    /**
+     *
+     * @param type $string
+     * @return type
+     */
+    function _output_string_protected($string)
+    {
+        return zen_output_string($string, false, true);
+    }
 }
 
 ?>

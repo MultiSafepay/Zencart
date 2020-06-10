@@ -325,9 +325,9 @@ if (!class_exists('multisafepay')) {
                     "manual" => false,
                     "days_active" => MODULE_PAYMENT_MULTISAFEPAY_DAYS_ACTIVE,
                     "payment_options" => array(
-                        "notification_url" => $this->_href_link('ext/modules/payment/multisafepay/notify_checkout.php?type=initial&', '', 'NONSSL', false, false),
+                        "notification_url" => zen_href_link('ext/modules/payment/multisafepay/notify_checkout.php?type=initial&', '', 'NONSSL', false, false, true),
                         "redirect_url" => $this->redirect_url,
-                        "cancel_url" => $this->_href_link('ext/modules/payment/multisafepay/cancel.php'),
+                        "cancel_url" => $this->get_cancel_url(),
                         "close_window" => true
                     ),
                     "customer" => $customer_data,
@@ -811,124 +811,6 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
-         *
-         * @param type $string
-         * @param type $translate
-         * @param type $protected
-         * @return type
-         */
-        function _output_string($string, $translate = false, $protected = false)
-        {
-            if ($protected == true) {
-                return htmlspecialchars($string);
-            } else {
-                if ($translate == false) {
-                    return $this->_parse_input_field_data($string, array('"' => '&quot;'));
-                } else {
-                    return $this->_parse_input_field_data($string, $translate);
-                }
-            }
-        }
-
-        /**
-         *
-         * @param type $string
-         * @return type
-         */
-        function _output_string_protected($string)
-        {
-            return $this->_output_string($string, false, true);
-        }
-
-        /**
-         *
-         * @param type $data
-         * @param type $parse
-         * @return type
-         */
-        function _parse_input_field_data($data, $parse)
-        {
-            return strtr(trim($data), $parse);
-        }
-
-        /**
-         *
-         * @global type $request_type
-         * @global type $session_started
-         * @global type $SID
-         * @param type $page
-         * @param type $parameters
-         * @param type $connection
-         * @param type $add_session_id
-         * @param type $unused
-         * @param type $escape_html
-         * @return string
-         */
-        function _href_link($page = '', $parameters = '', $connection = 'NONSSL', $add_session_id = true, $unused = true, $escape_html = true)
-        {
-            global $request_type, $session_started, $SID;
-
-            unset($unused);
-
-
-            if (!zen_not_null($page)) {
-                die('</td></tr></table></td></tr></table><br><br><font color="#ff0000"><b>Error!</b></font><br><br><b>Unable to determine the page link!<br><br>');
-            }
-
-            if ($connection == 'NONSSL') {
-                $link = HTTP_SERVER . DIR_WS_HTTPS_CATALOG;
-            } elseif ($connection == 'SSL') {
-
-                if (ENABLE_SSL == true) {
-                    $link = HTTPS_SERVER . DIR_WS_HTTPS_CATALOG;
-                } else {
-                    $link = HTTP_SERVER . DIR_WS_HTTPS_CATALOG;
-                }
-            } else {
-                die('</td></tr></table></td></tr></table><br><br><font color="#ff0000"><b>Error!</b></font><br><br><b>Unable to determine connection method on a link!<br><br>Known methods: NONSSL SSL</b><br><br>');
-            }
-
-            if (zen_not_null($parameters)) {
-                if ($escape_html) {
-                    $link .= $page . '?' . $this->_output_string($parameters);
-                } else {
-                    $link .= $page . '?' . $parameters;
-                }
-                $separator = '&';
-            } else {
-                $link .= $page;
-                $separator = '?';
-            }
-
-            while ((substr($link, -1) == '&') || (substr($link, -1) == '?')) {
-                $link = substr($link, 0, -1);
-            }
-
-            // Add the session ID when moving from different HTTP and HTTPS servers, or when SID is defined
-            if (($add_session_id == true) && ($session_started == true) && (SESSION_FORCE_COOKIE_USE == 'False')) {
-                if (zen_not_null($SID)) {
-                    $_sid = $SID;
-                } elseif (( ($request_type == 'NONSSL') && ($connection == 'SSL') && (ENABLE_SSL == true) ) || ( ($request_type == 'SSL') && ($connection == 'NONSSL') )) {
-                    if (HTTP_COOKIE_DOMAIN != HTTPS_COOKIE_DOMAIN) {
-
-                        $_sid = zen_session_name() . '=' . zen_session_id();
-                    }
-                }
-            }
-
-            if (isset($_sid)) {
-                if ($escape_html) {
-                    $link .= $separator . $this->_output_string($_sid);
-                } else {
-                    $link .= $separator . $_sid;
-                }
-            }
-
-
-            return $link;
-        }
-
-        /**
          * Checks whether all the payment options are available in the database as indication that
          * the payment method is installed correct through the admin panel
          *
@@ -1197,6 +1079,15 @@ if (!class_exists('multisafepay')) {
         }
 
         /**
+         * @return string
+         */
+        protected function get_cancel_url()
+        {
+            $sid = zen_session_name() . '=' . zen_session_id();
+            return zen_href_link('ext/modules/payment/multisafepay/cancel.php?' . $sid, '', 'NONSSL', false, false, true);
+        }
+
+        /**
          * @return string|null
          */
         protected function get_redirect_url()
@@ -1204,7 +1095,7 @@ if (!class_exists('multisafepay')) {
             $sid = zen_session_name() . '=' . zen_session_id();
 
             if (MODULE_PAYMENT_MULTISAFEPAY_AUTO_REDIRECT) {
-                return $this->_href_link('ext/modules/payment/multisafepay/success.php?' . $sid, '', 'NONSSL', false, false);
+                return zen_href_link('ext/modules/payment/multisafepay/success.php?' . $sid, '', 'NONSSL', false, false, true);
             } else {
                 return null;
             }
