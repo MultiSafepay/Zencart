@@ -76,7 +76,7 @@ if (!class_exists('multisafepay')) {
 
         public function update_status()
         {
-            global $order;
+            global $order, $currencies;
 
             if ($this->enabled === false) {
                 return;
@@ -93,9 +93,9 @@ if (!class_exists('multisafepay')) {
                         break;
 
                     case 'minMaxAmount':
-                        $minAmount = (float)$value['minAmount'];
-                        $maxAmount = (float)$value['maxAmount'];
-                        $orderTotal = (float)$order->info['total'];
+                        $minAmount = $currencies->rateAdjusted($value['minAmount']);
+                        $maxAmount = $currencies->rateAdjusted($value['maxAmount']);
+                        $orderTotal = $currencies->rateAdjusted($order->info['total']);
                         $this->enabled = $this->minMaxAmount($minAmount, $maxAmount, $orderTotal);
                         break;
 
@@ -225,7 +225,7 @@ if (!class_exists('multisafepay')) {
          */
         function start_transaction()
         {
-            global $insert_id;
+            global $insert_id, $currencies;
 
             $this->api_key = $this->get_api_key();
             $this->api_url = $this->get_api_url();
@@ -239,8 +239,6 @@ if (!class_exists('multisafepay')) {
                 $items .= "<li>" . $product['qty'] . 'x ' . $product['name'] . "</li>\n";
             }
             $items .= "</ul>\n";
-
-            $amount = round($order->info['total'], 2) * 100;
 
             if (isset($order->customer['firstname'])) {
                 list($cust_street, $cust_housenumber) = $this->parseAddress($order->customer['street_address']);
@@ -318,7 +316,7 @@ if (!class_exists('multisafepay')) {
                     "type" => $this->trans_type,
                     "order_id" => $this->order_id,
                     "currency" => $order->info['currency'],
-                    "amount" => round($amount),
+                    "amount" => $currencies->rateAdjusted($order->info['total'])*100,
                     "gateway" => $this->gateway,
                     "description" => "Order #" . $this->order_id . " " . MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT . " " . STORE_NAME,
                     "items" => $items,
@@ -377,6 +375,8 @@ if (!class_exists('multisafepay')) {
          */
         function getShoppingCart($order)
         {
+            global $currencies;
+
             $shoppingcart_array = array();
 
             foreach ($order->products as $product) {
@@ -397,7 +397,7 @@ if (!class_exists('multisafepay')) {
                 $shoppingcart_array['items'][] = array(
                     "name" => $product['name'] . $attributeString,
                     "description" => $product['model'],
-                    "unit_price" => $price,
+                    "unit_price" => $currencies->rateAdjusted($price),
                     "quantity" => $product['qty'],
                     "merchant_item_id" => $product['id'],
                     "tax_table_selector" => $product['tax_description'],
@@ -412,7 +412,7 @@ if (!class_exists('multisafepay')) {
                 $shoppingcart_array['items'][] = array(
                     "name" => $order->info['shipping_method'],
                     "description" => $order->info['shipping_method'],
-                    "unit_price" => $order->info['shipping_cost'],
+                    "unit_price" => $currencies->rateAdjusted($order->info['shipping_cost']),
                     "quantity" => 1,
                     "merchant_item_id" => 'msp-shipping',
                     "tax_table_selector" => 'Shipping',
@@ -432,7 +432,7 @@ if (!class_exists('multisafepay')) {
                     $shoppingcart_array['items'][] = array(
                         "name" => $GLOBALS['ot_coupon']->title,
                         "description" => $GLOBALS['ot_coupon']->header,
-                        "unit_price" => -$GLOBALS['ot_coupon']->deduction,
+                        "unit_price" => $currencies->rateAdjusted(-$GLOBALS['ot_coupon']->deduction),
                         "quantity" => 1,
                         "merchant_item_id" => $GLOBALS['ot_coupon']->code,
                         "tax_table_selector" => "BTW0",
