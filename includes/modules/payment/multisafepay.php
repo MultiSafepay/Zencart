@@ -1022,19 +1022,22 @@ if (!class_exists('multisafepay')) {
          * @param $comments
          * @param $customer_notified
          * @param $check_status
+         * @return bool
          */
         public function _doStatusUpdate($order_id, $status, $comments, $customer_notified, $check_status)
         {
             if ($status === 3) {
-                $this->setTransactionStatusToShipped($order_id);
+                $this->setTransactionStatusToShipped($order_id, $comments);
             }
-            return;
+            return true;
         }
 
         /**
          * @param $order_id
+         * @param $comments
          */
-        private function setTransactionStatusToShipped ($order_id){
+        private function setTransactionStatusToShipped($order_id, $comments)
+        {
             try {
                 $msp = new MultiSafepayAPI\Client();
                 $api_url = $this->get_api_url();
@@ -1044,7 +1047,7 @@ if (!class_exists('multisafepay')) {
 
                 $endpoint = 'orders/' . $order_id;
                 $setShipping = array(
-                    'tracktrace_code' => null,
+                    'tracktrace_code' => $comments,
                     'carrier'         => null,
                     'status'          => 'shipped',
                     'ship_date'       => date('Y-m-d H:i:s'),
