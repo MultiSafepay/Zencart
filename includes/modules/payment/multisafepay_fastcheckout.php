@@ -32,7 +32,7 @@ class multisafepay_fastcheckout extends MultiSafepay
     var $description;
     var $enabled;
     var $sort_order;
-    var $plugin_ver = "3.0.0";
+    var $plugin_ver = "3.1.0-RC1";
     var $api_url;
     var $order_id;
     var $status;
