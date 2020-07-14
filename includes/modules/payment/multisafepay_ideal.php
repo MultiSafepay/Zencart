@@ -93,7 +93,11 @@ class multisafepay_ideal extends MultiSafepay
 
     public function prepare_transaction()
     {
-        $this->trans_type = 'direct';
+        if ($_POST['ideal_issuer']) {
+            $this->trans_type = 'direct';
+        } else {
+            $this->trans_type = 'redirect';
+        }
         $this->gateway_info = array(
             "issuer_id" => $_POST['ideal_issuer'],
             "referrer" => $_SERVER['HTTP_REFERER'],

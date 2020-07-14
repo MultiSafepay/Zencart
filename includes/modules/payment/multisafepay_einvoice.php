@@ -91,7 +91,12 @@ class multisafepay_einvoice extends MultiSafepay
 
     public function prepare_transaction()
     {
-        $this->trans_type = 'direct';
+        if ($_POST['einvoice_birthday'] && $_POST['einvoice_phone'] && $_POST['einvoice_bank_account']) {
+            $this->trans_type = 'direct';
+        } else {
+            $this->trans_type = 'redirect';
+        }
+
         $this->gateway_info = array(
             "birthday" => $_POST['einvoice_birthday'],
             "phone" => $_POST['einvoice_phone'],
