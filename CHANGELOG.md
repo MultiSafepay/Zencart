@@ -1,5 +1,5 @@
-## 3.1.0-RC1
-Release date: Jun 22th, 2020
+## 3.1.0
+Release date: Jul 14th, 2020
 
 ### Added
 + DAVAMS-213: Add track & trace to shipment request
@@ -20,6 +20,7 @@ Release date: Jun 22th, 2020
 + PLGZENS-53: Fix cannot save orders when images are enabled
 + PLGZENS-50: Fix error when not choosing an iDEAL issuer at "Select your bank" screen
 + PLGZENS-64: Fix orders getting an incorrect status
++ Update deprecated constructor
 
 ### Changed
 + Bank transfer, Klarna, iDEAL, Pay After Delivery, E-Invoicing are now direct only
@@ -29,11 +30,15 @@ Release date: Jun 22th, 2020
 + PLGZENS-41: Update Klarna logo
 + PLGZENS-29: Send shopping cart data for all payment methods when creating transaction
 + PLGZENS-54: Set order to status shipped for all payment methods
++ PLGZENS-81: Use redirect transaction if required fields are not filled for iDEAL, Pay After Delivery, E-Invoicing
 
 ### Removed
 + PLGZENS-31: Remove unused admin folder
 + PLGZENS-60: Remove giftcards Lief, ParfumNL, Nationale Erotiekbon
 + PLGZENS-74: Remove FerBuy
++ PLGZENS-78: Remove branded giftcards Bloemen Cadeaubon, Brouwmarkt
++ PLGZENS-78: Remove branded giftcards De Grote Speelgoedwinkel, Jewelstore Giftcard
++ PLGZENS-78: Remove branded giftcards Kelly Giftcard
 
 ***
 
