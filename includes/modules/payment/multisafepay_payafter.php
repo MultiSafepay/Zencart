@@ -92,7 +92,12 @@ class multisafepay_payafter extends MultiSafepay
 
     public function prepare_transaction()
     {
-        $this->trans_type = 'direct';
+        if ($_POST['payafter_birthday'] && $_POST['payafter_phone'] && $_POST['payafter_bank_account']) {
+            $this->trans_type = 'direct';
+        } else {
+            $this->trans_type = 'redirect';
+        }
+
         $this->gateway_info = array(
             "birthday" => $_POST['payafter_birthday'],
             "phone" => $_POST['payafter_phone'],

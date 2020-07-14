@@ -33,7 +33,7 @@ if (!class_exists('multisafepay')) {
         var $description;
         var $enabled;
         var $sort_order;
-        var $plugin_ver = "3.0.0";
+        var $plugin_ver = "3.1.0";
         var $icon = "connect.png";
         var $api_url;
         var $order_id;
@@ -47,7 +47,7 @@ if (!class_exists('multisafepay')) {
          * Constructor
          */
 
-        function multisafepay($order_id = -1)
+        public function __construct($order_id = -1)
         {
             global $order;
 

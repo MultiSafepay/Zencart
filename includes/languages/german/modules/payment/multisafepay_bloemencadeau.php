@@ -1,5 +1,0 @@
-<?php
-
-define('MODULE_PAYMENT_MSP_BLOEMENCADEAUBON_TEXT_TITLE', 'Bloemen Cadeaubon');
-define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'bei');
-?>
