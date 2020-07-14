@@ -27,7 +27,6 @@ require('includes/application_top.php');
 require("includes/modules/payment/multisafepay.php");
 require("includes/modules/payment/multisafepay_fastcheckout.php");
 require("includes/modules/payment/multisafepay_payafter.php");
-require("includes/modules/payment/multisafepay_klarna.php");
 require("includes/modules/payment/multisafepay_einvoice.php");
 require($template->get_template_dir('main_template_vars.php', DIR_WS_TEMPLATE, $current_page_base, 'common') . '/main_template_vars.php');
 
@@ -74,10 +73,6 @@ if (empty($_GET['transactionid'])) {
             $payment_module = new multisafepay_payafter();
             $payment_module->order_id = $merchant_order_id; //$_GET['transactionid'];
             $_SESSION['payment'] = 'multisafepay_payafter';
-        } elseif ($payment_module->msp->orders->data->payment_details->type == "KLARNA") {
-            $payment_module = new multisafepay_klarna();
-            $payment_module->order_id = $merchant_order_id; //$_GET['transactionid'];
-            $_SESSION['payment'] = 'multisafepay_klarna';
         }
     } else {
         $payment_module = new multisafepay_fastcheckout();

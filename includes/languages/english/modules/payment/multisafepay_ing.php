@@ -1,0 +1,5 @@
+<?php
+
+define('MODULE_PAYMENT_MSP_ING_TEXT_TITLE', 'ING Home\'Pay');
+define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'at');
+?>

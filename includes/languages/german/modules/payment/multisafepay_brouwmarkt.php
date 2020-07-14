@@ -1,5 +1,0 @@
-<?php
-
-define('MODULE_PAYMENT_MSP_BROUWMARKT_TEXT_TITLE', 'Brouwmarkt');
-define('MODULE_PAYMENT_MULTISAFEPAY_TEXT_AT', 'bei');
-?>

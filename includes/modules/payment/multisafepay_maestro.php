@@ -37,66 +37,18 @@ class multisafepay_maestro extends multisafepay
         global $order;
 
         $this->code = 'multisafepay_maestro';
+        $this->gateway = 'MAESTRO';
         $this->title = $this->getTitle(MODULE_PAYMENT_MSP_MAESTRO_TEXT_TITLE);
-        $this->public_title = $this->getTitle(MODULE_PAYMENT_MSP_MAESTRO_TEXT_TITLE);
-        $this->description = $this->description = "<img src='images/icon_info.gif' border='0'>&nbsp;<b>MultiSafepay Maestro</b><BR>The main MultiSafepay module must be installed (does not have to be active) to use this payment method.<BR>";
+        $this->description = $this->getDescription();
         $this->enabled = MODULE_PAYMENT_MSP_MAESTRO_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MSP_MAESTRO_SORT_ORDER;
+        $this->paymentFilters = [
+            'zone' => MODULE_PAYMENT_MSP_MAESTRO_ZONE
+        ];
 
         if (is_object($order)) {
             $this->update_status();
         }
-    }
-
-    /*
-     * Check whether this payment module is available
-     */
-
-    function update_status()
-    {
-        global $order, $db;
-
-        if (($this->enabled == true) && ((int) MODULE_PAYMENT_MSP_MAESTRO_ZONE > 0)) {
-            $check_flag = false;
-            $check_query = $db->Execute("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . MODULE_PAYMENT_MSP_MAESTRO_ZONE . "' and zone_country_id = '" . $order->billing['country']['id'] . "' order by zone_id");
-            while (!$check_query->EOF) {
-                if ($check_query->fields['zone_id'] < 1) {
-                    $check_flag = true;
-                    break;
-                } elseif ($check_query->fields['zone_id'] == $order->billing['zone_id']) {
-                    $check_flag = true;
-                    break;
-                }
-                $check_query->MoveNext();
-            }
-
-            if ($check_flag == false) {
-                $this->enabled = false;
-            }
-        }
-    }
-
-    /**
-     * 
-     * @return type
-     */
-    function process_button()
-    {
-        return zen_draw_hidden_field('msp_paymentmethod', 'MAESTRO');
-    }
-
-    /*
-     * Checks whether the payment has been “installed” through the admin panel
-     */
-
-    function check()
-    {
-        global $db;
-        if (!isset($this->_check)) {
-            $check_query = $db->Execute("SELECT configuration_value FROM " . TABLE_CONFIGURATION . " WHERE configuration_key = 'MODULE_PAYMENT_MSP_MAESTRO_STATUS'");
-            $this->_check = $check_query->RecordCount();
-        }
-        return $this->_check;
     }
 
     /*

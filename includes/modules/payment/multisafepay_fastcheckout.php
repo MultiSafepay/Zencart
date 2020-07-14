@@ -22,8 +22,9 @@
  */
 
 require_once(DIR_FS_CATALOG . "mspcheckout/API/Autoloader.php");
+require_once('multisafepay.php');
 
-class multisafepay_fastcheckout
+class multisafepay_fastcheckout extends MultiSafepay
 {
 
     var $code;
@@ -31,10 +32,9 @@ class multisafepay_fastcheckout
     var $description;
     var $enabled;
     var $sort_order;
-    var $plugin_ver = "ZenCart 3.0.0";
+    var $plugin_ver = "3.1.0";
     var $api_url;
     var $order_id;
-    var $public_title;
     var $status;
     var $order_status;
     var $shipping_methods = array();
@@ -52,6 +52,8 @@ class multisafepay_fastcheckout
 
         $this->code = 'multisafepay_fastcheckout';
         $this->title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_FCO_TEXT_TITLE);
+        $this->description = $this->getDescription();
+
         $this->enabled = MODULE_PAYMENT_MULTISAFEPAY_FCO_STATUS == 'True';
         $this->sort_order = MODULE_PAYMENT_MULTISAFEPAY_FCO_SORT_ORDER;
         $this->order_status = MODULE_PAYMENT_MULTISAFEPAY_FCO_ORDER_STATUS_ID_INITIALIZED;
@@ -67,28 +69,8 @@ class multisafepay_fastcheckout
         }
 
         $this->order_id = $order_id;
-        $this->public_title = $this->getTitle(MODULE_PAYMENT_MULTISAFEPAY_FCO_TEXT_TITLE);
         $this->status = null;
         $this->enabled = false; //Disabled for normal checkout
-    }
-
-    /**
-     * 
-     * @param type $admin
-     * @return type
-     */
-    function getTitle($admin = 'title')
-    {
-        $title = ($this->checkView() == "frontend") ? $this->generateIcon($this->getIcon()) . " " : "";
-
-        $title .= ($this->checkView() == "admin") ? "MultiSafepay - " : "";
-        if ($admin && $this->checkView() == "admin") {
-            $title .= $admin;
-        } else {
-            $title .= $this->getLangStr($admin);
-        }
-
-        return $title;
     }
 
     /**
@@ -123,53 +105,6 @@ class multisafepay_fastcheckout
         global $PHP_SELF;
 
         return basename($PHP_SELF);
-    }
-
-    /**
-     * 
-     * @return boolean|string
-     */
-    function getIcon()
-    {
-        if (MODULE_PAYMENT_MULTISAFEPAY_FCO_BTN_COLOR == 'Orange') {
-            $btn_icon = "fcobutton-orange.png";
-        } else {
-            $btn_icon = "fcobutton-black.png";
-        }
-
-        if (file_exists(DIR_WS_IMAGES . "multisafepay/" . strtolower($this->getUserLanguage("DETECT")) . $btn_icon)) {
-            $icon = DIR_WS_IMAGES . "multisafepay/" . strtolower($this->getUserLanguage("DETECT")) . $btn_icon;
-
-            return $icon;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * 
-     * @global type $db
-     * @global type $languages_id
-     * @param type $savedSetting
-     * @return string
-     */
-    function getUserLanguage($savedSetting)
-    {
-        global $db;
-
-        if ($savedSetting != "DETECT") {
-            return $savedSetting;
-        }
-
-        global $languages_id;
-
-        $query = $db->Execute("select languages_id, name, code, image, directory from " . TABLE_LANGUAGES . " where languages_id = " . (int) $languages_id . " limit 1");
-
-        if ($languages == $query) {
-            return strtolower($languages['code']);
-        }
-
-        return "en";
     }
 
     /**
@@ -464,34 +399,6 @@ class multisafepay_fastcheckout
     }
 
     /**
-     * Outputs the payment method title/text and if required, the input fields
-     * 
-     * @global type $customer_id
-     * @global type $languages_id
-     * @global type $order
-     * @global type $order_totals
-     * @global type $order_products_id
-     * @return type
-     */
-    function selection()
-    {
-        global $customer_id;
-        global $languages_id;
-        global $order;
-        global $order_totals;
-        global $order_products_id;
-
-        if (empty($this->api_url)) {
-            return;
-        }
-
-        return array(
-            'id' => $this->code,
-            'module' => $this->public_title
-        );
-    }
-
-    /**
      * Any checks of any conditions after payment method has been selected
      * 
      * @return boolean
@@ -522,24 +429,14 @@ class multisafepay_fastcheckout
         return false;
     }
 
-    /**
-     * Payment verification
-     */
     function before_process()
     {
-        $this->_save_order();
-
-        zen_redirect($this->_start_fastcheckout());
+        $GLOBALS['order']->info['payment_method'] = trim(strip_tags($GLOBALS['order']->info['payment_method']));
     }
 
-    /**
-     * Post-processing of the payment/order after the order has been finalised
-     * 
-     * @return boolean
-     */
     function after_process()
     {
-        return false;
+        zen_redirect($this->_start_fastcheckout());
     }
 
     /**
@@ -655,9 +552,12 @@ class multisafepay_fastcheckout
      */
     function _start_fastcheckout()
     {
+        global $insert_id;
+        $this->order_id = $insert_id;
+
         $items = "<ul>\n";
         foreach ($GLOBALS['order']->products as $product) {
-            $items .= "<li>" . $product['name'] . "</li>\n";
+            $items .= "<li>" . $product['qty'] . 'x ' . $product['name'] . "</li>\n";
         }
         $items .= "</ul>\n";
 
@@ -1177,6 +1077,11 @@ class multisafepay_fastcheckout
 
         $order_status_query = $db->Execute("SELECT orders_status_name FROM " . TABLE_ORDERS_STATUS . " WHERE orders_status_id = '" . $GLOBALS['order']->info['order_status'] . "' AND language_id = '" . $GLOBALS['languages_id'] . "'");
         $order_status = $order_status_query;
+
+        if ($new_stat == 0){
+            $new_stat = DEFAULT_ORDERS_STATUS_ID;
+        }
+
         $GLOBALS['order']->info['orders_status'] = $order_status->fields['orders_status_name'];
 
         if ($old_order_status != $new_stat) {
@@ -1203,7 +1108,8 @@ class multisafepay_fastcheckout
                 'orders_status_id' => $GLOBALS['order']->info['order_status'],
                 'date_added' => 'now()',
                 'customer_notified' => 1,
-                'comments' => $comment
+                'comments' => $comment,
+                'updated_by' => 'MultiSafepay'
             );
 
             zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
@@ -1460,7 +1366,8 @@ class multisafepay_fastcheckout
             'orders_status_id' => $order->info['order_status'],
             'date_added' => 'now()',
             'customer_notified' => '0',
-            'comments' => $order->info['comments']
+            'comments' => $order->info['comments'],
+            'updated_by' => 'MultiSafepay'
         );
 
         zen_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
@@ -1950,6 +1857,15 @@ class multisafepay_fastcheckout
         }
     }
 
+    /**
+     *
+     * @param type $string
+     * @return type
+     */
+    function _output_string_protected($string)
+    {
+        return zen_output_string($string, false, true);
+    }
 }
 
 ?>
