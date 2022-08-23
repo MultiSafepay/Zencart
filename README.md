@@ -4,26 +4,42 @@
 
 # MultiSafepay plugin for Zen Cart
 
-Easily integrate MultiSafepay payment solutions into your Zen Cart webshop with the free Zen Cart plugin.
+Easily integrate MultiSafepay payment solutions into your Zen Cart webshop with our free plugin.
 
-[![Latest Stable Version](https://img.shields.io/github/release/multisafepay/zencart.svg)](https://github.com/MultiSafepay/zencart)
+[![Latest stable version](https://img.shields.io/github/release/multisafepay/zencart.svg)](https://github.com/MultiSafepay/zencart)
 
 ## About MultiSafepay
-MultiSafepay is a collecting payment service provider which means we take care of the agreements, technical details and payment collection required for each payment method. You can start selling online today and manage all your transactions from one place.
-## Supported Payment Methods
-The supported Payment Methods & Gift cards for this plugin can be found over here: [Payment Methods & Gift cards](https://docs.multisafepay.com/plugins/zencart/faq/#available-payment-methods-in-zencart)
 
-## Requirements
-- To use the plugin you need a MultiSafepay account. You can create a test account on https://testmerchant.multisafepay.com/signup
-- Zen Cart 1.5
+MultiSafepay is a collecting payment service provider, which means we take care of electronic contracts, technical details, and payment collection required for each payment method. You can start selling online today and manage all your transactions from one place.
+
+## Supported payment methods
+
+See [Zen Cart](https://docs.multisafepay.com/docs/zen-cart) > Payment methods. 
+
+## Prerequisites
+
+- You will need a [MultiSafepay account](https://docs.multisafepay.com/docs/getting-started-guide/). Consider a test account first.
+- Zen Cart 1.5.5
+- Tested on PHP 7.0
 
 ## Installation through SFTP
-1) Unpack the content of the .ZIP file in the root of your webshop.
 
-For additional information or instructions please see our [installation & configuration manual](https://docs.multisafepay.com/plugins/zencart/manual/)
+1. In the root of your webshop, unpack the content of the .ZIP file.
+2. Sign in to your Zen Cart backend.
+3. Go to **Modules** > **Payment**.
+4. Select **MultiSafepay - Connect**, and then click **Install**.
+5. Enter your [API key](https://docs.multisafepay.com/docs/sites#site-id-api-key-and-security-code).
+6. Click **Update**.
+7. Disable the **MultiSafepay - Connect** module.
+8. Enable the relevant payment methods.
+
+For more information, see MultiSafepay Docs - [Zen Cart](https://docs.multisafepay.com/docs/zen-cart)
  
 ## Support
-You can create issues on our repository. If you need any additional help or support, please contact <a href="mailto:integration@multisafepay.com">integration@multisafepay.com</a>
+
+- Create an issue on this repository. 
+- Email <a href="mailto:integration@multisafepay.com">integration@multisafepay.com</a>
 
 ## Want to be part of the team?
-Are you a developer interested in working at MultiSafepay? [View](https://www.multisafepay.com/careers/#jobopenings) our job openings and feel free to get in touch with us.
+
+Are you a developer interested in working at MultiSafepay? Check out our [job openings](https://www.multisafepay.com/careers/#jobopenings) and feel free to get in touch!
